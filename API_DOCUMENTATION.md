@@ -18,16 +18,26 @@ Most endpoints are protected and require a **JSON Web Token (JWT)**.
 
 ## 🔐 Authentication
 
-### 1. School Admin Login
-Login for school administrators to manage their fleet.
-- **Endpoint**: `/auth/school/login`
+### Unified Login
+A single endpoint handles login for all roles.
+- **Endpoint**: `/auth/login`
 - **Method**: `POST`
 
-**Request Body:**
+**Request Body (School/Admin):**
 ```json
 {
+  "role": "school", // or "admin"
   "email": "admin@greenwood.com",
   "password": "password123"
+}
+```
+
+**Request Body (Driver/Parent):**
+```json
+{
+  "role": "driver", // or "parent"
+  "phone": "9876543210",
+  "otp": "1234"
 }
 ```
 
@@ -36,20 +46,32 @@ Login for school administrators to manage their fleet.
 {
   "status": "success",
   "token": "eyJhbGciOiJIUzI1Ni...",
-  "data": { "user": { "name": "Greenwood High", "email": "..." } }
+  "data": { "user": { "id": "...", "role": "school", ... } }
 }
 ```
 
-### 2. Driver Login
-Login for drivers using their registered phone number and OTP.
-- **Endpoint**: `/auth/driver/login`
+---
+
+## 🛡️ Super Admin
+*Requires `Admin` Role*
+
+### 1. Dashboard Stats
+Get global count of Schools, Buses, and Students.
+- **Endpoint**: `/admin/dashboard`
+- **Method**: `GET`
+
+### 2. Create School
+Register a new School with login credentials.
+- **Endpoint**: `/admin/schools`
 - **Method**: `POST`
 
 **Request Body:**
 ```json
 {
-  "phone": "9876543210",
-  "otp": "1234" 
+  "name": "Greenwood High",
+  "email": "admin@greenwood.com",
+  "password": "password123",
+  "address": "123 Main St"
 }
 ```
 
@@ -58,7 +80,12 @@ Login for drivers using their registered phone number and OTP.
 ## 🏫 School Management (Admin)
 *Requires `School` Role*
 
-### 1. Create Driver
+### 1. Dashboard Stats
+Get count of Routes, Buses, Students, and Drivers for *your* school.
+- **Endpoint**: `/school/dashboard`
+- **Method**: `GET`
+
+### 2. Create Driver
 Register a new driver for your school.
 - **Endpoint**: `/school/drivers`
 - **Method**: `POST`
@@ -68,11 +95,12 @@ Register a new driver for your school.
 {
   "name": "John Smith",
   "licenseNumber": "DL-123456789",
-  "phone": "9876543210"
+  "phone": "9876543210",
+    "assignedBus": "..." // Bus ID
 }
 ```
 
-### 2. Create Bus
+### 3. Create Bus
 Add a new bus to the fleet.
 - **Endpoint**: `/school/buses`
 - **Method**: `POST`
@@ -86,7 +114,7 @@ Add a new bus to the fleet.
 }
 ```
 
-### 3. Create Route
+### 4. Create Route
 Define a route with stops.
 - **Endpoint**: `/school/routes`
 - **Method**: `POST`

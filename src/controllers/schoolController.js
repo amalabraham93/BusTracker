@@ -47,9 +47,25 @@ exports.createStudent = catchAsync(async (req, res, next) => {
     res.status(201).json({ status: 'success', data: { student } });
 });
 
-exports.getDashboard = catchAsync(async (req, res, next) => {
+exports.getDashboardStats = catchAsync(async (req, res, next) => {
     const schoolId = req.user.id;
-    // Aggregation for dashboard could go here
-    // For MVP just returning success
-    res.status(200).json({ status: 'success', message: 'Dashboard data' });
+
+    // 1. Count Routes
+    const routeCount = await RouteRepository.model.countDocuments({ schoolId });
+    // 2. Count Buses
+    const busCount = await BusRepository.model.countDocuments({ schoolId });
+    // 3. Count Students
+    const studentCount = await StudentRepository.model.countDocuments({ schoolId });
+    // 4. Count Drivers
+    const driverCount = await DriverRepository.model.countDocuments({ schoolId });
+
+    res.status(200).json({
+        status: 'success',
+        data: {
+            routes: routeCount,
+            buses: busCount,
+            students: studentCount,
+            drivers: driverCount
+        }
+    });
 });

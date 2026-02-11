@@ -5,15 +5,11 @@ A high-performance, scalable backend for tracking school buses in real-time. Bui
 ## 🚀 Features
 
 - **Multi-Tenant Architecture**: Supports Super Admin, multiple Schools, Drivers, and Parents.
+- **Unified Authentication**: Single login point for all roles with Session/JWT management.
+- **Role-Based Access Control (RBAC)**: Secure access for Admin, School, Driver, and Parent.
 - **Real-time Tracking**: Updates driver locations via Socket.IO and persists optimized data.
 - **Geo-Fencing**: Automated proximity alerts (2KM radius) using MongoDB Geospatial queries.
-- **Performance**:
-  - **Redis Caching**: Caches active trips and session data.
-  - **Optimized DB**: Compound indexes and GeoJSON support.
-- **Security**:
-  - JWT Authentication & Referesh Tokens.
-  - Role-Based Access Control (RBAC).
-  - Rate Limiting, Helmet, and Input Validation.
+- **Smart Dashboards**: Aggregated statistics for Super Admins and School Admins.
 
 ## 🛠 Tech Stack
 
@@ -29,11 +25,11 @@ A high-performance, scalable backend for tracking school buses in real-time. Bui
 ```
 src/
  ├── config/         # DB & Redis configs
- ├── controllers/    # Request handlers
+ ├── controllers/    # Request handlers (Admin, School, Auth, Driver, Parent)
  ├── middleware/     # Auth, Validation, Error handling
- ├── models/         # Mongoose Schemas
+ ├── models/         # Mongoose Schemas (School, Driver, Trip, etc.)
  ├── repositories/   # Data Access Layer
- ├── routes/         # API Routes
+ ├── routes/         # API Routes (v1)
  ├── services/       # Business Logic
  ├── sockets/        # Socket.IO handlers
  ├── utils/          # Logger, AppError, etc.
@@ -78,22 +74,28 @@ src/
 
 ## 🧪 API Documentation
 
-### Auth
-- `POST /api/v1/auth/school/login`
-- `POST /api/v1/auth/driver/login`
+**Base URL**: `/api/v1`
 
-### School (Admin)
-- `POST /api/v1/school/drivers` - Create Driver
-- `POST /api/v1/school/buses` - Create Bus
-- `PUT /api/v1/school/routes` - Create Route
+### 🔐 Authentication
+- `POST /auth/login` - Unified Login (Select role: `admin`, `school`, `driver`, `parent`)
 
-### Driver
-- `POST /api/v1/driver/trip/start` - Start Trip
-- `PATCH /api/v1/driver/trip/location` - Update Location
-- `POST /api/v1/driver/attendance` - Mark Attendance
+### 🛡️ Super Admin
+- `GET /admin/dashboard` - Global Stats (Schools, Buses, Students)
+- `POST /admin/schools` - Create New School
 
-### Parent
-- `GET /api/v1/parent/children` - Get Linked Children
+### 🏫 School Management
+- `GET /school/dashboard` - School Stats
+- `POST /school/drivers` - Create Driver
+- `POST /school/buses` - Create Bus
+- `POST /school/routes` - Create Route
+
+### 🚌 Driver
+- `POST /driver/trip/start` - Start Trip
+- `PATCH /driver/trip/location` - Update Live Location
+- `POST /driver/attendance` - Mark Student Attendance
+
+### 👨‍👩‍👧 Parent
+- `GET /parent/children` - Get Linked Children & Status
 
 ---
 *Built for scale and performance.*

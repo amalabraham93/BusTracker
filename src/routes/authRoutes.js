@@ -5,22 +5,12 @@ const { body } = require('express-validator');
 
 const router = express.Router();
 
-router.post('/school/login', [
-    body('email').isEmail().withMessage('Please provide a valid email'),
-    body('password').exists().withMessage('Password is required'),
+router.post('/login', [
+    body('role').isIn(['admin', 'school', 'driver', 'parent']).withMessage('Invalid role'),
+    // Conditional validation is hard with static express-validator middleware here
+    // heavily relying on controller check or custom validator.
+    // Let's keep basic check that role exists. Controller checks specific fields.
     validate
-], authController.loginSchool);
-
-router.post('/driver/login', [
-    body('phone').exists().withMessage('Phone is required'),
-    body('otp').exists().withMessage('OTP is required'),
-    validate
-], authController.loginDriver);
-
-router.post('/parent/login', [
-    body('phone').exists().withMessage('Phone is required'),
-    body('otp').exists().withMessage('OTP is required'),
-    validate
-], authController.loginParent);
+], authController.login);
 
 module.exports = router;

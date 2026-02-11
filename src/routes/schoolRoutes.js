@@ -11,6 +11,6 @@ router.post('/drivers', schoolController.createDriver);
 router.post('/buses', schoolController.createBus);
 router.post('/routes', schoolController.createRoute);
 router.post('/students', schoolController.createStudent);
-router.get('/dashboard', schoolController.getDashboard);
+router.get('/dashboard', schoolController.getDashboardStats);
 
 module.exports = router;

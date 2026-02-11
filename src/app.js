@@ -8,6 +8,7 @@ const AppError = require('./utils/AppError');
 
 // Routes
 const authRoutes = require('./routes/authRoutes');
+const adminRoutes = require('./routes/adminRoutes'); // New
 const driverRoutes = require('./routes/driverRoutes');
 const schoolRoutes = require('./routes/schoolRoutes');
 const parentRoutes = require('./routes/parentRoutes');
@@ -37,6 +38,7 @@ app.use(compression());
 
 // 2. ROUTES
 app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/admin', adminRoutes); // New
 app.use('/api/v1/driver', driverRoutes);
 app.use('/api/v1/school', schoolRoutes);
 app.use('/api/v1/parent', parentRoutes);
