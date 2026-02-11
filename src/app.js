@@ -44,7 +44,8 @@ app.use('/api/v1/school', schoolRoutes);
 app.use('/api/v1/parent', parentRoutes);
 
 // 3. UNHANDLED ROUTES
-app.all('*', (req, res, next) => {
+// 3. UNHANDLED ROUTES
+app.all(/(.*)/, (req, res, next) => {
     next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
 });
 
