@@ -11,14 +11,22 @@ dotenv.config();
 
 // Handling Uncaught Exception
 process.on('uncaughtException', err => {
+    console.error('UNCAUGHT EXCEPTION! 💥 Shutting down...');
+    console.error(err);
     logger.error('UNCAUGHT EXCEPTION! 💥 Shutting down...');
     logger.error(err.name, err.message);
     process.exit(1);
 });
 
 // Connect to Database
-connectDB();
-connectRedis();
+(async () => {
+    try {
+        await connectDB();
+        await connectRedis();
+    } catch (err) {
+        logger.error('Startup Error:', err);
+    }
+})();
 
 const server = http.createServer(app);
 
