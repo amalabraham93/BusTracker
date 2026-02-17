@@ -34,4 +34,7 @@ router.post('/attendance', [
     validate
 ], driverController.markAttendance);
 
+// Dashboard
+router.get('/dashboard', driverController.getDashboard);
+
 module.exports = router;

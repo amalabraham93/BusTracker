@@ -5,13 +5,15 @@ const StudentSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    studentID: {
+    studentRollId: { // Renamed from generic studentID for clarity, UI shows "Student ID: RPS-STU-001"
         type: String,
-        required: true
+        required: true,
+        trim: true
     },
-    class: {
+    classGrade: { // Renamed from class (reserved keyword)
         type: String,
-        required: true
+        required: true,
+        trim: true
     },
     section: {
         type: String,
@@ -46,13 +48,13 @@ const StudentSchema = new mongoose.Schema({
         },
         coordinates: {
             type: [Number], // [longitude, latitude]
-            required: true
+            default: [0, 0] // Default to 0,0 if not provided
         }
     }
 });
 
 StudentSchema.index({ pickupLocation: '2dsphere' });
 // Compound index for finding students in a school/class
-StudentSchema.index({ schoolId: 1, class: 1, section: 1 });
+StudentSchema.index({ schoolId: 1, classGrade: 1, section: 1 });
 
 module.exports = mongoose.model('Student', StudentSchema);

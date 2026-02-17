@@ -11,9 +11,20 @@ exports.login = catchAsync(async (req, res, next) => {
 
     let user;
     if (role === 'school') {
-        const { email, password } = req.body;
+        const { email, password, otp } = req.body;
         if (!email || !password) return next(new AppError('Please provide email and password', 400));
-        user = await AuthService.loginSchool(email, password);
+
+        try {
+            user = await AuthService.loginSchool(email, password, otp);
+        } catch (err) {
+            if (err.statusCode === 202) {
+                return res.status(202).json({
+                    status: 'pending',
+                    message: err.message
+                });
+            }
+            throw err;
+        }
     }
     else if (role === 'driver') {
         const { phone, otp } = req.body;

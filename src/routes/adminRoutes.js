@@ -18,5 +18,7 @@ router.post('/schools', [
 ], adminController.createSchool);
 
 router.get('/dashboard', adminController.getDashboardStats);
+router.get('/live-tracking', adminController.getLiveTracking);
+router.get('/attendance', adminController.getAllAttendance);
 
 module.exports = router;

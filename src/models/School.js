@@ -27,6 +27,18 @@ const SchoolSchema = new mongoose.Schema({
         type: Boolean,
         default: true
     },
+    otp: {
+        type: String,
+        select: false
+    },
+    otpExpires: {
+        type: Date,
+        select: false
+    },
+    isVerified: {
+        type: Boolean,
+        default: false
+    },
     createdAt: {
         type: Date,
         default: Date.now
