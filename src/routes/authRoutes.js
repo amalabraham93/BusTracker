@@ -11,6 +11,6 @@ router.post('/login', [
     // heavily relying on controller check or custom validator.
     // Let's keep basic check that role exists. Controller checks specific fields.
     validate
-], authController.login);
+], (authController.login));
 
 module.exports = router;

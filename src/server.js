@@ -40,6 +40,8 @@ server.listen(PORT, () => {
 
 // Handling Unhandled Rejection
 process.on('unhandledRejection', err => {
+    console.error('UNHANDLED REJECTION! 💥 Shutting down...');
+    console.error(err);
     logger.error('UNHANDLED REJECTION! 💥 Shutting down...');
     logger.error(err.name, err.message);
     server.close(() => {

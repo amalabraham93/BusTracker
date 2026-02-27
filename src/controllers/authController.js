@@ -3,6 +3,7 @@ const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/AppError');
 
 exports.login = catchAsync(async (req, res, next) => {
+    console.log("Login controller");
     const { role } = req.body;
 
     if (!role) {

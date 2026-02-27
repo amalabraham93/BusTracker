@@ -15,13 +15,15 @@ const parentRoutes = require('./routes/parentRoutes');
 
 const app = express();
 
+// Trust proxy for Render/Cloud environments (required for rate-limiting)
+app.set('trust proxy', 1);
+
 // 1. GLOBAL MIDDLEWARE
 // Set security HTTP headers
 app.use(helmet());
 
 // Implement CORS
 app.use(cors());
-
 // Limit requests from same API
 const limiter = rateLimit({
     max: 100,
@@ -37,13 +39,20 @@ app.use(express.json({ limit: '10kb' }));
 app.use(compression());
 
 // 2. ROUTES
+app.get('/', (req, res) => {
+    res.status(200).json({
+        status: 'success',
+        message: 'School Bus Tracker API is running!',
+        version: '1.0.0'
+    });
+});
+
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/admin', adminRoutes); // New
 app.use('/api/v1/driver', driverRoutes);
 app.use('/api/v1/school', schoolRoutes);
 app.use('/api/v1/parent', parentRoutes);
 
-// 3. UNHANDLED ROUTES
 // 3. UNHANDLED ROUTES
 app.all(/(.*)/, (req, res, next) => {
     next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
