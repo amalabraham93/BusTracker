@@ -1,4 +1,5 @@
 const logger = require('../utils/logger');
+const { emitToRoom } = require('../sockets/socketHandler');
 
 class NotificationService {
     async sendPushNotification(token, title, body, data = {}) {
@@ -9,6 +10,12 @@ class NotificationService {
 
     async sendToTopic(topic, title, body) {
         logger.info(`[PUSH TOPIC] Topic: ${topic} | Title: ${title} | Body: ${body}`);
+        return true;
+    }
+
+    async sendRealTimeAlert(room, event, data) {
+        logger.info(`[SOCKET ALERT] Room: ${room} | Event: ${event}`);
+        emitToRoom(room, event, data);
         return true;
     }
 }

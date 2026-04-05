@@ -35,6 +35,10 @@ class AuthService {
             throw new AppError('Incorrect email or password', 401);
         }
 
+        // TEMPORARY: Bypass verification for school login
+        return school;
+
+        /* Original logic with OTP
         // 2. If already verified, return
         if (school.isVerified) {
             return school;
@@ -69,6 +73,7 @@ class AuthService {
         await school.save();
 
         return school;
+        */
     }
 
     async loginDriver(phone, otp) {

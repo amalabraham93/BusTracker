@@ -103,3 +103,82 @@ exports.getDashboard = catchAsync(async (req, res, next) => {
         }
     });
 });
+
+exports.sendAlertToParents = catchAsync(async (req, res, next) => {
+    const { type, message } = req.body;
+    const driverId = req.user.id;
+    const DriverRepository = require('../repositories/DriverRepository');
+    const NotificationService = require('../services/NotificationService');
+    const AuditLogRepository = require('../repositories/AuditLogRepository');
+
+    if (!['Route Change', 'Delay', 'Breakdown'].includes(type)) {
+        return next(new AppError('Invalid alert type', 400));
+    }
+
+    const driver = await DriverRepository.model.findById(driverId).populate('assignedBus');
+    if (!driver || !driver.assignedBus || !driver.assignedBus.assignedRoute) {
+        return next(new AppError('No active route found for this driver', 400));
+    }
+
+    const routeId = driver.assignedBus.assignedRoute;
+    const alertData = {
+        type,
+        message: message || `There is a ${type} for your child's bus route.`,
+        timestamp: new Date()
+    };
+
+    // 1. Emit Socket Alert
+    await NotificationService.sendRealTimeAlert(`route:${routeId}`, 'routeAlert', alertData);
+
+    // 2. Log Action
+    await AuditLogRepository.logAction({
+        userId: driverId,
+        userRole: 'driver',
+        action: 'UPDATE',
+        resource: 'Route',
+        resourceId: routeId,
+        details: { alertType: type, message: alertData.message }
+    });
+
+    res.status(200).json({
+        status: 'success',
+        message: `Alert sent to parents for ${type}`
+    });
+});
+
+exports.sendEmergencyAlert = catchAsync(async (req, res, next) => {
+    const driverId = req.user.id;
+    const DriverRepository = require('../repositories/DriverRepository');
+    const NotificationService = require('../services/NotificationService');
+    const AuditLogRepository = require('../repositories/AuditLogRepository');
+
+    const driver = await DriverRepository.findById(driverId);
+    if (!driver) return next(new AppError('Driver not found', 404));
+
+    const schoolId = driver.schoolId;
+    const alertData = {
+        driverName: driver.name,
+        driverPhone: driver.phone,
+        busId: driver.assignedBus,
+        message: 'EMERGENCY: Panic button pressed!',
+        timestamp: new Date()
+    };
+
+    // 1. Emit Socket Alert to School
+    await NotificationService.sendRealTimeAlert(`school:${schoolId}`, 'emergencyAlert', alertData);
+
+    // 2. Log Action
+    await AuditLogRepository.logAction({
+        userId: driverId,
+        userRole: 'driver',
+        action: 'UPDATE',
+        resource: 'School',
+        resourceId: schoolId,
+        details: { emergency: true, message: alertData.message }
+    });
+
+    res.status(200).json({
+        status: 'success',
+        message: 'Emergency alert sent to school administration'
+    });
+});

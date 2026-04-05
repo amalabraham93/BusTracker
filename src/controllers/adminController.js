@@ -1,38 +1,287 @@
 const SchoolRepository = require('../repositories/SchoolRepository');
 const BusRepository = require('../repositories/BusRepository');
+const RouteRepository = require('../repositories/RouteRepository');
 const StudentRepository = require('../repositories/StudentRepository');
+const AuditLogRepository = require('../repositories/AuditLogRepository');
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/AppError');
 
-exports.createSchool = catchAsync(async (req, res, next) => {
-    // Only Super Admin can create schools
-    const { name, email, password, address } = req.body;
+// --- SCHOOL MANAGEMENT ---
 
-    // Check if email exists
+exports.getSchools = catchAsync(async (req, res, next) => {
+    const { page, limit, search, isActive } = req.query;
+    
+    const filter = {};
+    if (isActive !== undefined) filter.isActive = isActive === 'true';
+
+    const result = await SchoolRepository.findPaged({
+        page,
+        limit,
+        search,
+        searchFields: ['name', 'email', 'schoolID'],
+        filter
+    });
+
+    res.status(200).json({
+        status: 'success',
+        ...result
+    });
+});
+
+exports.createSchool = catchAsync(async (req, res, next) => {
+    const { name, email, password, address, schoolID } = req.body;
+
     const existingSchool = await SchoolRepository.findByEmail(email);
     if (existingSchool) {
         return next(new AppError('School with this email already exists', 400));
     }
 
     const school = await SchoolRepository.create({
-        name, email, password, address
+        name, email, password, address, schoolID
     });
 
-    // Remove password from output
     school.password = undefined;
 
+    await AuditLogRepository.logAction({
+        userId: 'admin', // Mock admin for now
+        userRole: 'admin',
+        action: 'CREATE',
+        resource: 'School',
+        resourceId: school._id,
+        details: { name: school.name, schoolID }
+    });
+
     res.status(201).json({
+        status: 'success',
+        message: 'School created successfully!',
+        data: { school }
+    });
+});
+
+exports.updateSchool = catchAsync(async (req, res, next) => {
+    const school = await SchoolRepository.update(req.params.id, req.body);
+    if (!school) return next(new AppError('School not found', 404));
+
+    await AuditLogRepository.logAction({
+        userId: 'admin',
+        userRole: 'admin',
+        action: 'UPDATE',
+        resource: 'School',
+        resourceId: school._id,
+        details: req.body
+    });
+
+    res.status(200).json({
         status: 'success',
         data: { school }
     });
 });
 
+exports.deleteSchool = catchAsync(async (req, res, next) => {
+    const school = await SchoolRepository.delete(req.params.id);
+    if (!school) return next(new AppError('School not found', 404));
+
+    await AuditLogRepository.logAction({
+        userId: 'admin',
+        userRole: 'admin',
+        action: 'DELETE',
+        resource: 'School',
+        resourceId: req.params.id
+    });
+
+    res.status(204).json({
+        status: 'success',
+        data: null
+    });
+});
+
+// --- BUS MANAGEMENT (ADMIN) ---
+
+exports.getBuses = catchAsync(async (req, res, next) => {
+    const { page, limit, search, isActive, schoolId } = req.query;
+    const filter = {};
+    if (isActive !== undefined) filter.isActive = isActive === 'true';
+    if (schoolId) filter.schoolId = schoolId;
+
+    const result = await BusRepository.findPaged({
+        page,
+        limit,
+        search,
+        searchFields: ['busNumber'],
+        filter,
+        populate: 'schoolId assignedDriver assignedRoute'
+    });
+
+    res.status(200).json({ status: 'success', ...result });
+});
+
+exports.createBus = catchAsync(async (req, res, next) => {
+    const bus = await BusRepository.create(req.body);
+    
+    await AuditLogRepository.logAction({
+        userId: 'admin',
+        userRole: 'admin',
+        action: 'CREATE',
+        resource: 'Bus',
+        resourceId: bus._id,
+        details: req.body
+    });
+
+    res.status(201).json({ status: 'success', data: { bus } });
+});
+
+exports.updateBus = catchAsync(async (req, res, next) => {
+    const bus = await BusRepository.update(req.params.id, req.body);
+    if (!bus) return next(new AppError('Bus not found', 404));
+
+    await AuditLogRepository.logAction({
+        userId: 'admin',
+        userRole: 'admin',
+        action: 'UPDATE',
+        resource: 'Bus',
+        resourceId: bus._id,
+        details: req.body
+    });
+
+    res.status(200).json({ status: 'success', data: { bus } });
+});
+
+exports.deleteBus = catchAsync(async (req, res, next) => {
+    await BusRepository.delete(req.params.id);
+    await AuditLogRepository.logAction({
+        userId: 'admin',
+        userRole: 'admin',
+        action: 'DELETE',
+        resource: 'Bus',
+        resourceId: req.params.id
+    });
+    res.status(204).json({ status: 'success', data: null });
+});
+
+// --- ROUTE MANAGEMENT (ADMIN) ---
+
+exports.getRoutes = catchAsync(async (req, res, next) => {
+    const { page, limit, search, isActive, schoolId } = req.query;
+    const filter = {};
+    if (isActive !== undefined) filter.isActive = isActive === 'true';
+    if (schoolId) filter.schoolId = schoolId;
+
+    const result = await RouteRepository.findPaged({
+        page,
+        limit,
+        search,
+        searchFields: ['routeName'],
+        filter,
+        populate: 'schoolId'
+    });
+
+    res.status(200).json({ status: 'success', ...result });
+});
+
+exports.createRoute = catchAsync(async (req, res, next) => {
+    const route = await RouteRepository.create(req.body);
+    await AuditLogRepository.logAction({
+        userId: 'admin',
+        userRole: 'admin',
+        action: 'CREATE',
+        resource: 'Route',
+        resourceId: route._id,
+        details: req.body
+    });
+    res.status(201).json({ status: 'success', data: { route } });
+});
+
+exports.updateRoute = catchAsync(async (req, res, next) => {
+    const route = await RouteRepository.update(req.params.id, req.body);
+    if (!route) return next(new AppError('Route not found', 404));
+    await AuditLogRepository.logAction({
+        userId: 'admin',
+        userRole: 'admin',
+        action: 'UPDATE',
+        resource: 'Route',
+        resourceId: route._id,
+        details: req.body
+    });
+    res.status(200).json({ status: 'success', data: { route } });
+});
+
+exports.deleteRoute = catchAsync(async (req, res, next) => {
+    await RouteRepository.delete(req.params.id);
+    await AuditLogRepository.logAction({
+        userId: 'admin',
+        userRole: 'admin',
+        action: 'DELETE',
+        resource: 'Route',
+        resourceId: req.params.id
+    });
+    res.status(204).json({ status: 'success', data: null });
+});
+
+// --- STUDENT MANAGEMENT (ADMIN) ---
+
+exports.getStudents = catchAsync(async (req, res, next) => {
+    const { page, limit, search, isActive, schoolId, classGrade } = req.query;
+    const filter = {};
+    if (isActive !== undefined) filter.isActive = isActive === 'true';
+    if (schoolId) filter.schoolId = schoolId;
+    if (classGrade) filter.classGrade = classGrade;
+
+    const result = await StudentRepository.findPaged({
+        page,
+        limit,
+        search,
+        searchFields: ['name', 'studentRollId', 'parentPhone'],
+        filter,
+        populate: 'schoolId assignedBus assignedRoute'
+    });
+
+    res.status(200).json({ status: 'success', ...result });
+});
+
+exports.createStudent = catchAsync(async (req, res, next) => {
+    const student = await StudentRepository.create(req.body);
+    await AuditLogRepository.logAction({
+        userId: 'admin',
+        userRole: 'admin',
+        action: 'CREATE',
+        resource: 'Student',
+        resourceId: student._id,
+        details: req.body
+    });
+    res.status(201).json({ status: 'success', data: { student } });
+});
+
+exports.updateStudent = catchAsync(async (req, res, next) => {
+    const student = await StudentRepository.update(req.params.id, req.body);
+    if (!student) return next(new AppError('Student not found', 404));
+    await AuditLogRepository.logAction({
+        userId: 'admin',
+        userRole: 'admin',
+        action: 'UPDATE',
+        resource: 'Student',
+        resourceId: student._id,
+        details: req.body
+    });
+    res.status(200).json({ status: 'success', data: { student } });
+});
+
+exports.deleteStudent = catchAsync(async (req, res, next) => {
+    await StudentRepository.delete(req.params.id);
+    await AuditLogRepository.logAction({
+        userId: 'admin',
+        userRole: 'admin',
+        action: 'DELETE',
+        resource: 'Student',
+        resourceId: req.params.id
+    });
+    res.status(204).json({ status: 'success', data: null });
+});
+
+// --- OTHER ADMIN FEATURES ---
+
 exports.getDashboardStats = catchAsync(async (req, res, next) => {
-    // 1. Count Schools
     const schoolCount = await SchoolRepository.model.countDocuments();
-    // 2. Count Buses
     const busCount = await BusRepository.model.countDocuments();
-    // 3. Count Students
     const studentCount = await StudentRepository.model.countDocuments();
 
     res.status(200).json({
@@ -46,11 +295,7 @@ exports.getDashboardStats = catchAsync(async (req, res, next) => {
 });
 
 exports.getLiveTracking = catchAsync(async (req, res, next) => {
-    // Get all drivers who are currently verified and have a location
-    // Optionally filter by 'isActive' or 'currentTripId' if we only want drivers on a trip
     const DriverRepository = require('../repositories/DriverRepository');
-
-    // We want drivers with non-null currentLocation
     const drivers = await DriverRepository.model.find({
         currentLocation: { $exists: true },
         isActive: true
@@ -68,36 +313,24 @@ exports.getLiveTracking = catchAsync(async (req, res, next) => {
 exports.getAllAttendance = catchAsync(async (req, res, next) => {
     const { date, schoolId } = req.query;
     const AttendanceRepository = require('../repositories/AttendanceRepository');
-
     let query = {};
 
-    // Date Filter
     if (date) {
         const queryDate = new Date(date);
         const nextDay = new Date(queryDate);
         nextDay.setDate(queryDate.getDate() + 1);
         query.date = { $gte: queryDate, $lt: nextDay };
     } else {
-        // Default to today
         const startOfDay = new Date();
         startOfDay.setHours(0, 0, 0, 0);
         query.date = { $gte: startOfDay };
     }
 
-    // School Filter
-    // Attendance doesn't strictly have schoolId, but it has studentId -> schoolId
-    // If filtering by school, we need to find students of that school first OR aggregate
-    // For performance, let's Aggregate.
-
-    // But first, let's just get the raw list and aggregation for stats.
-
-    // If schoolId is provided, we need to filter students.
     if (schoolId) {
         const studentIds = await StudentRepository.model.find({ schoolId }).distinct('_id');
         query.studentId = { $in: studentIds };
     }
 
-    // A. Statistics (Aggregation)
     const stats = await AttendanceRepository.model.aggregate([
         { $match: query },
         {
@@ -108,14 +341,7 @@ exports.getAllAttendance = catchAsync(async (req, res, next) => {
         }
     ]);
 
-    // Format stats
-    const statsObj = {
-        total: 0,
-        boarded: 0,
-        dropped: 0,
-        absent: 0
-    };
-
+    const statsObj = { total: 0, boarded: 0, dropped: 0, absent: 0 };
     stats.forEach(s => {
         statsObj.total += s.count;
         if (s._id === 'Boarded') statsObj.boarded = s.count;
@@ -123,7 +349,6 @@ exports.getAllAttendance = catchAsync(async (req, res, next) => {
         if (s._id === 'Absent') statsObj.absent = s.count;
     });
 
-    // B. List Records (populated)
     const attendance = await AttendanceRepository.model.find(query)
         .populate({
             path: 'studentId',
@@ -132,13 +357,10 @@ exports.getAllAttendance = catchAsync(async (req, res, next) => {
         })
         .populate('tripId', 'busId')
         .sort('-timestamp')
-        .limit(100); // Pagination needed in real app
+        .limit(100);
 
     res.status(200).json({
         status: 'success',
-        data: {
-            stats: statsObj,
-            attendance
-        }
+        data: { stats: statsObj, attendance }
     });
 });

@@ -23,6 +23,12 @@ const SchoolSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    schoolID: {
+        type: String,
+        unique: true,
+        sparse: true, // Optional for existing ones, required for new
+        index: true
+    },
     isActive: {
         type: Boolean,
         default: true

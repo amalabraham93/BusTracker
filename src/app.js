@@ -26,9 +26,9 @@ app.use(helmet());
 app.use(cors());
 // Limit requests from same API
 const limiter = rateLimit({
-    max: 100,
-    windowMs: 60 * 60 * 1000,
-    message: 'Too many requests from this IP, please try again in an hour!'
+    max: 2000,           // Increased for AI testing
+    windowMs: 15 * 60 * 1000, // 15 minutes window
+    message: 'Too many requests from this IP, please try again in a few minutes!'
 });
 app.use('/api', limiter);
 

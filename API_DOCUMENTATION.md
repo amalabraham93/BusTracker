@@ -24,13 +24,12 @@ A single endpoint handles login for all roles.
 - **Method**: `POST`
 
 **Request Body (School/Admin):**
-> **Note:** For new schools, the first login triggers an OTP sent to email. You must provide `otp` in the second request to verify. Subsequent logins only need email/password.
+> **Note:** For new schools, the first login triggers an OTP sent to email. You must provide `otp` in the second request to verify. **(TEMPORARILY BYPASSED: Currently only requires email/password to ease testing).**
 ```json
 {
   "role": "school", // or "admin"
   "email": "admin@greenwood.com",
-  "password": "password123",
-  "otp": "1234" // Required for first-time verification
+  "password": "password123"
 }
 ```
 
@@ -43,14 +42,10 @@ A single endpoint handles login for all roles.
 }
 ```
 
-**Response:**
-```json
-{
-  "status": "success",
-  "token": "eyJhbGciOiJIUzI1Ni...",
-  "data": { "user": { "id": "...", "role": "school", ... } }
-}
-```
+### Logout
+Invalidate the current session (client should also clear the token).
+- **Endpoint**: `/auth/logout`
+- **Method**: `POST`
 
 ---
 
@@ -68,223 +63,103 @@ Get all active drivers/buses with their current location.
 - **Method**: `GET`
 
 ### 3. Global Attendance Reports
-Get attendance statistics (Total, Boarded, Dropped, Absent) and records for all schools (or filtered).
+Get attendance statistics and records for all schools.
 - **Endpoint**: `/admin/attendance`
 - **Method**: `GET`
 - **Query Params**: `?date=2023-10-27&schoolId=...`
 
-### 4. Create School
-Register a new School with login credentials.
-Register a new School with login credentials.
-- **Endpoint**: `/admin/schools`
-- **Method**: `POST`
+### 4. School Management (Admin Context)
+Manage all schools in the system.
+- **Endpoints**: 
+    - `GET /admin/schools` (Lists all schools. Query: `page`, `limit`, `search`, `isActive`)
+    - `POST /admin/schools` (Create school. Body: `name`, `email`, `password`, `address`, `schoolID`)
+    - `PATCH /admin/schools/:id` (Update school. Body: any field including `isActive`)
+    - `DELETE /admin/schools/:id` (Delete school)
 
-**Request Body:**
-```json
-{
-  "name": "Greenwood High",
-  "email": "admin@greenwood.com",
-  "password": "password123",
-  "address": "123 Main St"
-}
-```
+### 5. Global Resource Management
+Admins can manage any resource in the system. All actions are **Logged** in the `AuditLogs` collection.
+- **Endpoints**:
+    - `/admin/buses` (GET/POST/PATCH/DELETE)
+    - `/admin/routes` (GET/POST/PATCH/DELETE)
+    - `/admin/students` (GET/POST/PATCH/DELETE)
+- **Common Query Params for LIST APIs**:
+    - `page`: Page number (default 1)
+    - `limit`: Records per page (default 10)
+    - `search`: Case-insensitive search on primary fields (name, number, ID)
+    - `isActive`: Filter by status (`true`/`false`)
+    - `schoolId`: Filter resources by a specific school.
 
 ---
 
-## 🏫 School Management (Admin)
+## 🏫 School Management (School Context)
 *Requires `School` Role*
 
-### 1. Dashboard Stats
-Get count of Routes, Buses, Students, and Drivers for *your* school.
-- **Endpoint**: `/school/dashboard`
-- **Method**: `GET`
+### 1. Dashboard & Reports
+- **Dashboard**: `GET /school/dashboard`
+- **Attendance**: `GET /school/attendance`
+- **Live**: `GET /school/live-tracking`
 
-### 2. Attendance Dashboard
-Get attendance statistics (Total, Boarded, Dropped, Absent) and records for the school.
-- **Endpoint**: `/school/attendance`
-- **Method**: `GET`
-- **Query Params**: `?date=2023-10-27`
-
-### 3. Live Tracking (School)
-Get active drivers/buses for your school.
-- **Endpoint**: `/school/live-tracking`
-- **Method**: `GET`
-
-### 4. Create Driver
-Register a new driver for your school.
-- **Endpoint**: `/school/drivers`
-- **Method**: `POST`
-
-**Request Body:**
-```json
-{
-  "name": "John Smith",
-  "licenseNumber": "DL-123456789",
-  "phone": "9876543210",
-    "assignedBus": "..." // Bus ID
-}
-```
-
-### 4. Get Drivers
-Get list of drivers.
-- **Endpoint**: `/school/drivers`
-- **Method**: `GET`
-
-### 5. Create Bus
-Add a new bus to the fleet.
-- **Endpoint**: `/school/buses`
-- **Method**: `POST`
-
-**Request Body:**
-```json
-{
-  "busNumber": "KA-01-AB-9999",
-  "capacity": 40,
-  "assignedDriver": "60d5ecb8b3...1a", // Optional Driver ID
-  "assignedRoute": "60d5ecb8b3...1b", // Route ID
-  "gpsDeviceId": "GPS-101-XYZ",       // Optional
-  "attender": "Jane Doe"              // Optional Attender Name
-}
-```
-
-### 6. Get Buses
-Get list of buses.
-- **Endpoint**: `/school/buses`
-- **Method**: `GET`
-
-### 7. Create Route
-Define a route with stops.
-- **Endpoint**: `/school/routes`
-- **Method**: `POST`
-
-**Request Body:**
-```json
-{
-  "routeName": "Route 5 - Downtown",
-  "stops": [
-    {
-      "stopName": "Central Park",
-      "location": { "type": "Point", "coordinates": [77.5946, 12.9716] } // [Lng, Lat]
-    }
-  ]
-}
-```
-
-### 8. Get Routes
-Get list of routes.
-- **Endpoint**: `/school/routes`
-- **Method**: `GET`
-
-### 9. Create Student
-Add student with Pickup/Drop location.
-- **Endpoint**: `/school/students`
-- **Method**: `POST`
-
-**Request Body:**
-```json
-{
-  "name": "Vignesh P",
-  "studentRollId": "20142314",
-  "classGrade": "10",
-  "section": "C",
-  "assignedBus": "...",
-  "assignedRoute": "...",
-  "parentPhone": "9876543210",         // Required for Parent Login
-  "pickupLocation": { "type": "Point", "coordinates": [77.5946, 12.9716] } // Optional now
-}
-```
-
-### 10. Get Students
-Get list of students.
-- **Endpoint**: `/school/students`
-- **Method**: `GET`
-```
+### 2. Resource Management
+Manage resources **strictly for your own school**. All actions are **Logged**.
+- **Endpoints**:
+    - `/school/buses` (GET/POST/PATCH/DELETE)
+    - `/school/drivers` (GET/POST/PATCH/DELETE)
+    - `/school/routes` (GET/POST/PATCH/DELETE)
+    - `/school/students` (GET/POST/PATCH/DELETE)
+- **Common Query Params for LIST APIs**:
+    - `page`, `limit`, `search`, `isActive` (Same as Admin)
 
 ---
 
 ## 🚌 Driver Operations
 *Requires `Driver` Role*
 
-### 1. Dashboard (My Details)
-Get assigned Bus, Route, and Student List for the route.
-- **Endpoint**: `/driver/dashboard`
-- **Method**: `GET`
+### 1. Core Operations
+- **Dashboard**: `GET /driver/dashboard`
+- **Start Trip**: `POST /driver/trip/start`
+- **Update Location**: `PATCH /driver/trip/location`
+- **Mark Attendance**: `POST /driver/attendance`
 
-### 2. Start Trip
-Start a trip session. This triggers push notifications to parents.
-- **Endpoint**: `/driver/trip/start`
-- **Method**: `POST`
+### 2. Instant Alerts (New)
+Drivers can push real-time alerts to parents and schools.
+- **Alert Parents (Route Updates)**:
+    - **Endpoint**: `/driver/alerts/parents`
+    - **Method**: `POST`
+    - **Body**: `{ "type": "Delay", "message": "10 mins late" }`
+    - **Types**: `Route Change`, `Delay`, `Breakdown`
+- **Panic Button (Emergency)**:
+    - **Endpoint**: `/driver/alerts/emergency`
+    - **Method**: `POST`
+    - **Description**: Instantly notifies the school administration room.
 
-**Request Body:**
-```json
-{
-  "busId": "60d5...",
-  "routeId": "60d5...",
-  "schoolId": "60d5..."
-}
-```
+---
 
-### 3. Update Location (Real-time)
-Send GPS updates. The server automatically checks for nearby students (2KM radius) and sends alerts.
-- **Endpoint**: `/driver/trip/location`
-- **Method**: `PATCH`
+## 📡 Real-time (Socket.IO)
+Connect to `socket.io` server for instant updates.
 
-**Request Body:**
-```json
-{
-  "lat": 12.9716,
-  "lng": 77.5946
-}
-```
-*Note: This endpoint is rate-limited to avoid spam.*
+### Rooms to Join
+- **`route:<routeId>`**: Join this to receive alerts for a specific bus route.
+- **`school:<schoolId>`**: Join this (School Admins) to receive emergency panic alerts.
 
-### 4. Mark Attendance
-Update a student's status (Boarded/Dropped/Absent).
-- **Endpoint**: `/driver/attendance`
-- **Method**: `POST`
-
-**Request Body:**
-```json
-{
-  "studentId": "60d5...",
-  "status": "Boarded" // Options: "Boarded", "Dropped", "Absent"
-}
-```
+### Events
+- **`routeAlert`**: Data: `{ type, message, timestamp }`
+- **`emergencyAlert`**: Data: `{ driverName, driverPhone, message, timestamp }`
+- **`locationUpdate`**: Data: `{ driverId, lat, lng }` (Sent to room `route:ID`)
 
 ---
 
 ## 👨‍👩‍👧 Parent Access
 *Requires `Parent` Role (Phone Auth)*
 
-### 1. Get My Children
-Fetch all students linked to the logged-in parent's phone number. Supports children in different schools.
-- **Endpoint**: `/parent/children`
-- **Method**: `GET`
-
-**Response:**
-```json
-{
-  "status": "success",
-  "results": 2,
-  "data": {
-    "children": [
-      {
-        "name": "Alice Code",
-        "schoolId": { "name": "Greenwood High" },
-        "pickupLocation": { "coordinates": [77.6, 12.9] }
-      }
-    ]
-  }
-}
-```
+- **Get My Children**: `GET /parent/children`
 
 ---
 
 ### ⚠️ Error Handling
-Standard error format. Code `202` indicates OTP required for pending verification.
+Standard error format. 
 ```json
 {
-  "status": "fail", // or "error" || "pending"
-  "message": "Invalid password"
+  "status": "fail", // or "error"
+  "message": "Error description here"
 }
 ```

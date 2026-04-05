@@ -50,6 +50,10 @@ const StudentSchema = new mongoose.Schema({
             type: [Number], // [longitude, latitude]
             default: [0, 0] // Default to 0,0 if not provided
         }
+    },
+    isActive: {
+        type: Boolean,
+        default: true
     }
 });
 

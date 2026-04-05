@@ -33,6 +33,10 @@ const BusSchema = new mongoose.Schema({
         // If we need more details:
         // type: { name: String, phone: String }
         // For MVP string is fine.
+    },
+    isActive: {
+        type: Boolean,
+        default: true
     }
 });
 

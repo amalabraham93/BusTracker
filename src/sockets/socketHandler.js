@@ -19,6 +19,11 @@ const initSocket = (server) => {
             logger.info(`Client ${socket.id} joined route:${routeId}`);
         });
 
+        socket.on('joinSchool', (schoolId) => {
+            socket.join(`school:${schoolId}`);
+            logger.info(`Client ${socket.id} joined school:${schoolId}`);
+        });
+
         socket.on('disconnect', () => {
             logger.info(`Client disconnected: ${socket.id}`);
         });
@@ -34,4 +39,11 @@ const getIo = () => {
     return io;
 };
 
-module.exports = { initSocket, getIo };
+const emitToRoom = (room, event, data) => {
+    if (io) {
+        io.to(room).emit(event, data);
+        logger.info(`Emitted ${event} to ${room}`);
+    }
+};
+
+module.exports = { initSocket, getIo, emitToRoom };

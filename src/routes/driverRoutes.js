@@ -37,4 +37,12 @@ router.post('/attendance', [
 // Dashboard
 router.get('/dashboard', driverController.getDashboard);
 
+// Alerts
+router.post('/alerts/parents', [
+    body('type').isIn(['Route Change', 'Delay', 'Breakdown']),
+    validate
+], driverController.sendAlertToParents);
+
+router.post('/alerts/emergency', driverController.sendEmergencyAlert);
+
 module.exports = router;

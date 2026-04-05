@@ -3,7 +3,6 @@ const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/AppError');
 
 exports.login = catchAsync(async (req, res, next) => {
-    console.log("Login controller");
     const { role } = req.body;
 
     if (!role) {
@@ -52,3 +51,13 @@ exports.login = catchAsync(async (req, res, next) => {
 
     AuthService.createSendToken(user, role, 200, res);
 });
+
+exports.logout = (req, res) => {
+    // For standard stateless JWT, logout is usually just client-side token clearing.
+    // If we want a server-side denylist, we use Redis here.
+    // For MVP, returning success is sufficient.
+    res.status(200).json({
+        status: 'success',
+        message: 'Logged out successfully!'
+    });
+};
