@@ -27,6 +27,7 @@ class AuthService {
         res.status(statusCode).json({
             status: 'success',
             token,
+            role,
             data: {
                 user
             }
@@ -56,14 +57,14 @@ class AuthService {
 
         // 4. Mock SMS Send
         logger.info(`[SMS] OTP for ${phone} (${role}): ${otp}`);
-        
+
         return { message: 'OTP sent successfully', otp };
     }
 
     async verifyOtp(phone, role, otp) {
         // 1. Find OTP record
         const auth = await PhoneAuth.findOne({ phone, role });
-        
+
         if (!auth) {
             throw new AppError('No OTP request found for this phone number', 400);
         }
