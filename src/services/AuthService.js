@@ -2,6 +2,8 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const SchoolRepository = require('../repositories/SchoolRepository');
 const DriverRepository = require('../repositories/DriverRepository');
+const PhoneAuth = require('../models/PhoneAuth');
+const StudentRepository = require('../repositories/StudentRepository');
 const AppError = require('../utils/AppError');
 const logger = require('../utils/logger');
 
@@ -15,9 +17,12 @@ class AuthService {
     createSendToken(user, role, statusCode, res) {
         const token = this.signToken(user._id, role);
 
-        // Remove password from output
-        user.password = undefined;
-        user.otpSecret = undefined;
+        // Remove sensitive fields from output
+        if (user.toObject) user = user.toObject();
+        delete user.password;
+        delete user.otp;
+        delete user.otpExpires;
+        delete user.otpSecret;
 
         res.status(statusCode).json({
             status: 'success',
@@ -28,76 +33,82 @@ class AuthService {
         });
     }
 
+    async sendOtp(phone, role) {
+        // 1. Validate user existence based on role
+        if (role === 'driver') {
+            const driver = await DriverRepository.findByPhone(phone);
+            if (!driver) throw new AppError('No driver found with this phone number', 404);
+        } else if (role === 'parent') {
+            const student = await StudentRepository.findOne({ parentPhone: phone });
+            if (!student) throw new AppError('No parent record found with this phone number', 404);
+        }
+
+        // 2. Generate 4-digit OTP
+        const otp = Math.floor(1000 + Math.random() * 9000).toString();
+        const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+        // 3. Save/Update OTP in PhoneAuth
+        await PhoneAuth.findOneAndUpdate(
+            { phone, role },
+            { otp, expiresAt },
+            { upsert: true, new: true }
+        );
+
+        // 4. Mock SMS Send
+        logger.info(`[SMS] OTP for ${phone} (${role}): ${otp}`);
+        
+        return { message: 'OTP sent successfully', otp };
+    }
+
+    async verifyOtp(phone, role, otp) {
+        // 1. Find OTP record
+        const auth = await PhoneAuth.findOne({ phone, role });
+        
+        if (!auth) {
+            throw new AppError('No OTP request found for this phone number', 400);
+        }
+
+        // 2. Verify OTP
+        if (auth.otp !== otp) {
+            throw new AppError('Invalid OTP', 400);
+        }
+
+        if (auth.expiresAt < new Date()) {
+            throw new AppError('OTP has expired', 400);
+        }
+
+        // 3. Fetch User and Clear OTP
+        let user;
+        if (role === 'driver') {
+            user = await DriverRepository.findByPhone(phone);
+        } else if (role === 'parent') {
+            // Check if phone exists in student records
+            const student = await StudentRepository.findOne({ parentPhone: phone });
+            if (!student) throw new AppError('Parent record no longer exists', 404);
+            user = { _id: phone, phone, role: 'parent' };
+        }
+
+        await PhoneAuth.deleteOne({ _id: auth._id });
+
+        return user;
+    }
+
     async loginSchool(email, password, otp) {
-        // 1. Check if school exists
+        // ... (existing code, unchanged logic)
         const school = await SchoolRepository.model.findOne({ email }).select('+password +otp +otpExpires');
         if (!school || school.password !== password) {
             throw new AppError('Incorrect email or password', 401);
         }
-
-        // TEMPORARY: Bypass verification for school login
         return school;
-
-        /* Original logic with OTP
-        // 2. If already verified, return
-        if (school.isVerified) {
-            return school;
-        }
-
-        // 3. If not verified and no OTP provided, generate and send OTP
-        if (!otp) {
-            const newOtp = Math.floor(1000 + Math.random() * 9000).toString(); // Simple 4 digit OTP
-            school.otp = newOtp;
-            school.otpExpires = Date.now() + 10 * 60 * 1000; // 10 mins
-            await school.save();
-
-            // In real app, send Email here
-            logger.info(`OTP for ${email}: ${newOtp}`); // LOGGING OTP FOR DEMO
-
-            throw new AppError('OTP sent to email. Please verify.', 202); // 202 Accepted, indicating further action needed
-        }
-
-        // 4. Verify OTP
-        if (school.otp !== otp) {
-            throw new AppError('Invalid OTP', 400);
-        }
-
-        if (school.otpExpires < Date.now()) {
-            throw new AppError('OTP expired', 400);
-        }
-
-        // 5. Mark as verified
-        school.isVerified = true;
-        school.otp = undefined;
-        school.otpExpires = undefined;
-        await school.save();
-
-        return school;
-        */
     }
 
+    // Deprecated in favor of new verifyOtp flow but keeping for compatibility if needed
     async loginDriver(phone, otp) {
-        // Mock OTP verification
-        if (otp !== '1234') { // Fixed OTP for demo
-            throw new AppError('Invalid OTP', 400);
-        }
-
-        const driver = await DriverRepository.findByPhone(phone);
-        if (!driver) {
-            throw new AppError('Driver not found', 404);
-        }
-        return driver;
+        return await this.verifyOtp(phone, 'driver', otp);
     }
 
-    // Parent Login would be similar to Driver (Phone + OTP)
-    // For MVP, we can treat parent login lightly since we don't have a Parent model 
-    // but rather link via Student. Use a generic "Parent" role token.
     async loginParent(phone, otp) {
-        if (otp !== '1234') {
-            throw new AppError('Invalid OTP', 400);
-        }
-        // Just verify phone format or existance in Student repo if stricter
-        return { _id: phone, phone, role: 'parent' }; // Using phone as ID for parent
+        return await this.verifyOtp(phone, 'parent', otp);
     }
 }
 

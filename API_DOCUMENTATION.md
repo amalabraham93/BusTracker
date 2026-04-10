@@ -18,27 +18,55 @@ Most endpoints are protected and require a **JSON Web Token (JWT)**.
 
 ## 🔐 Authentication
 
-### Unified Login
-A single endpoint handles login for all roles.
+### Authentication Flow (Driver/Parent)
+
+#### 1. Send OTP
+Request a 4-digit code.
+- **Endpoint**: `/auth/send-otp`
+- **Method**: `POST`
+- **Body**:
+  ```json
+  {
+    "role": "driver", // or "parent"
+    "phone": "9876543210"
+  }
+  ```
+- **Response**: `200 OK`. The OTP is returned in the `otp` key for testing purposes.
+  ```json
+  {
+    "status": "success",
+    "message": "OTP sent successfully",
+    "otp": "1234" 
+  }
+  ```
+
+#### 2. Verify OTP (Login)
+Submit the code to receive a JWT token.
+- **Endpoint**: `/auth/verify-otp`
+- **Method**: `POST`
+- **Body**:
+  ```json
+  {
+    "phone": "9876543210",
+    "role": "driver",
+    "otp": "1234"
+  }
+  ```
+
+---
+
+### Legacy/Unified Login (Admin/School)
+A single endpoint handles initial login.
 - **Endpoint**: `/auth/login`
 - **Method**: `POST`
 
 **Request Body (School/Admin):**
-> **Note:** For new schools, the first login triggers an OTP sent to email. You must provide `otp` in the second request to verify. **(TEMPORARILY BYPASSED: Currently only requires email/password to ease testing).**
+> **Note:** For schools, OTP is currently bypassed to ease testing. Currently requires email/password.
 ```json
 {
   "role": "school", // or "admin"
   "email": "admin@greenwood.com",
   "password": "password123"
-}
-```
-
-**Request Body (Driver/Parent):**
-```json
-{
-  "role": "driver", // or "parent"
-  "phone": "9876543210",
-  "otp": "1234"
 }
 ```
 

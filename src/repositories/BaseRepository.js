@@ -24,8 +24,7 @@ class BaseRepository {
      * Advanced Finder with Pagination, Search, and Filtering
      * @param {Object} params { page, limit, search, searchFields, filter, sort, populate }
      */
-    async findPaged({ page = 1, limit = 10, search = '', searchFields = [], filter = {}, sort = { createdAt: -1 }, populate = '' }) {
-        const skip = (page - 1) * limit;
+    async findPaged({ page, limit, search = '', searchFields = [], filter = {}, sort = { createdAt: -1 }, populate = '' }) {
         let query = { ...filter };
 
         // 1. Handle Search (case-insensitive regex)
@@ -35,10 +34,19 @@ class BaseRepository {
             }));
         }
 
-        // 2. Execute Query
-        let mongoQuery = this.model.find(query).sort(sort).skip(skip).limit(limit);
+        // 2. Prepare Query
+        let mongoQuery = this.model.find(query).sort(sort);
 
-        // 3. Handle Populate
+        // 3. Handle Pagination (Optional)
+        const isPaging = limit !== undefined && limit !== null && limit !== '';
+        if (isPaging) {
+            const p = Number(page) || 1;
+            const l = Number(limit);
+            const skip = (p - 1) * l;
+            mongoQuery = mongoQuery.skip(skip).limit(l);
+        }
+
+        // 4. Handle Populate
         if (populate) {
             mongoQuery = mongoQuery.populate(populate);
         }
@@ -51,9 +59,9 @@ class BaseRepository {
         return {
             data,
             total,
-            page: Number(page),
-            limit: Number(limit),
-            totalPages: Math.ceil(total / limit)
+            page: isPaging ? Number(page || 1) : 1,
+            limit: isPaging ? Number(limit) : total,
+            totalPages: isPaging ? Math.ceil(total / Number(limit)) : 1
         };
     }
 

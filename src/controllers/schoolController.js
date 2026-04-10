@@ -38,7 +38,11 @@ exports.createBus = catchAsync(async (req, res, next) => {
         details: data
     });
 
-    res.status(201).json({ status: 'success', data: { bus } });
+    res.status(201).json({ 
+        status: 'success', 
+        message: 'Bus created successfully!',
+        data: { bus } 
+    });
 });
 
 exports.updateBus = catchAsync(async (req, res, next) => {
@@ -54,7 +58,11 @@ exports.updateBus = catchAsync(async (req, res, next) => {
         resourceId: bus._id,
         details: req.body
     });
-    res.status(200).json({ status: 'success', data: { bus: updatedBus } });
+    res.status(200).json({ 
+        status: 'success', 
+        message: 'Bus updated successfully!',
+        data: { bus: updatedBus } 
+    });
 });
 
 exports.deleteBus = catchAsync(async (req, res, next) => {
@@ -69,7 +77,11 @@ exports.deleteBus = catchAsync(async (req, res, next) => {
         resource: 'Bus',
         resourceId: req.params.id
     });
-    res.status(204).json({ status: 'success', data: null });
+    res.status(200).json({ 
+        status: 'success', 
+        message: 'Bus deleted successfully!',
+        data: null 
+    });
 });
 
 // --- DRIVER MANAGEMENT (SCHOOL) ---
@@ -104,7 +116,11 @@ exports.createDriver = catchAsync(async (req, res, next) => {
         details: data
     });
 
-    res.status(201).json({ status: 'success', data: { driver } });
+    res.status(201).json({ 
+        status: 'success', 
+        message: 'Driver created successfully!',
+        data: { driver } 
+    });
 });
 
 exports.updateDriver = catchAsync(async (req, res, next) => {
@@ -120,7 +136,11 @@ exports.updateDriver = catchAsync(async (req, res, next) => {
         resourceId: driver._id,
         details: req.body
     });
-    res.status(200).json({ status: 'success', data: { driver: updatedDriver } });
+    res.status(200).json({ 
+        status: 'success', 
+        message: 'Driver updated successfully!',
+        data: { driver: updatedDriver } 
+    });
 });
 
 exports.deleteDriver = catchAsync(async (req, res, next) => {
@@ -135,7 +155,11 @@ exports.deleteDriver = catchAsync(async (req, res, next) => {
         resource: 'Driver',
         resourceId: req.params.id
     });
-    res.status(204).json({ status: 'success', data: null });
+    res.status(200).json({ 
+        status: 'success', 
+        message: 'Driver deleted successfully!',
+        data: null 
+    });
 });
 
 // --- ROUTE MANAGEMENT (SCHOOL) ---
@@ -168,7 +192,11 @@ exports.createRoute = catchAsync(async (req, res, next) => {
         resourceId: route._id,
         details: data
     });
-    res.status(201).json({ status: 'success', data: { route } });
+    res.status(201).json({ 
+        status: 'success', 
+        message: 'Route created successfully!',
+        data: { route } 
+    });
 });
 
 exports.updateRoute = catchAsync(async (req, res, next) => {
@@ -184,7 +212,11 @@ exports.updateRoute = catchAsync(async (req, res, next) => {
         resourceId: route._id,
         details: req.body
     });
-    res.status(200).json({ status: 'success', data: { route: updatedRoute } });
+    res.status(200).json({ 
+        status: 'success', 
+        message: 'Route updated successfully!',
+        data: { route: updatedRoute } 
+    });
 });
 
 exports.deleteRoute = catchAsync(async (req, res, next) => {
@@ -199,7 +231,11 @@ exports.deleteRoute = catchAsync(async (req, res, next) => {
         resource: 'Route',
         resourceId: req.params.id
     });
-    res.status(204).json({ status: 'success', data: null });
+    res.status(200).json({ 
+        status: 'success', 
+        message: 'Route deleted successfully!',
+        data: null 
+    });
 });
 
 // --- STUDENT MANAGEMENT (SCHOOL) ---
@@ -234,7 +270,11 @@ exports.createStudent = catchAsync(async (req, res, next) => {
         resourceId: student._id,
         details: data
     });
-    res.status(201).json({ status: 'success', data: { student } });
+    res.status(201).json({ 
+        status: 'success', 
+        message: 'Student created successfully!',
+        data: { student } 
+    });
 });
 
 exports.updateStudent = catchAsync(async (req, res, next) => {
@@ -250,7 +290,11 @@ exports.updateStudent = catchAsync(async (req, res, next) => {
         resourceId: student._id,
         details: req.body
     });
-    res.status(200).json({ status: 'success', data: { student: updatedStudent } });
+    res.status(200).json({ 
+        status: 'success', 
+        message: 'Student updated successfully!',
+        data: { student: updatedStudent } 
+    });
 });
 
 exports.deleteStudent = catchAsync(async (req, res, next) => {
@@ -265,7 +309,11 @@ exports.deleteStudent = catchAsync(async (req, res, next) => {
         resource: 'Student',
         resourceId: req.params.id
     });
-    res.status(204).json({ status: 'success', data: null });
+    res.status(200).json({ 
+        status: 'success', 
+        message: 'Student deleted successfully!',
+        data: null 
+    });
 });
 
 // --- DASHBOARD & REPORTS (SCHOOL) ---

@@ -7,11 +7,21 @@ const router = express.Router();
 
 router.post('/login', [
     body('role').isIn(['admin', 'school', 'driver', 'parent']).withMessage('Invalid role'),
-    // Conditional validation is hard with static express-validator middleware here
-    // heavily relying on controller check or custom validator.
-    // Let's keep basic check that role exists. Controller checks specific fields.
     validate
 ], (authController.login));
+
+router.post('/send-otp', [
+    body('phone').notEmpty().withMessage('Phone is required'),
+    body('role').isIn(['driver', 'parent']).withMessage('Invalid role for OTP'),
+    validate
+], authController.requestOtp);
+
+router.post('/verify-otp', [
+    body('phone').notEmpty().withMessage('Phone is required'),
+    body('otp').notEmpty().withMessage('OTP is required'),
+    body('role').isIn(['driver', 'parent']).withMessage('Invalid role'),
+    validate
+], authController.verifyOtp);
 
 router.post('/logout', authController.logout);
 

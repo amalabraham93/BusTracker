@@ -52,10 +52,40 @@ exports.login = catchAsync(async (req, res, next) => {
     AuthService.createSendToken(user, role, 200, res);
 });
 
+exports.requestOtp = catchAsync(async (req, res, next) => {
+    const { phone, role } = req.body;
+
+    if (!phone || !role) {
+        return next(new AppError('Please provide phone number and role', 400));
+    }
+
+    if (!['driver', 'parent'].includes(role)) {
+        return next(new AppError('OTP system only supported for Drivers and Parents', 400));
+    }
+
+    const result = await AuthService.sendOtp(phone, role);
+
+    res.status(200).json({
+        status: 'success',
+        message: result.message,
+        otp: result.otp
+    });
+});
+
+exports.verifyOtp = catchAsync(async (req, res, next) => {
+    const { phone, role, otp } = req.body;
+
+    if (!phone || !role || !otp) {
+        return next(new AppError('Please provide phone, role, and OTP', 400));
+    }
+
+    const user = await AuthService.verifyOtp(phone, role, otp);
+
+    AuthService.createSendToken(user, role, 200, res);
+});
+
 exports.logout = (req, res) => {
     // For standard stateless JWT, logout is usually just client-side token clearing.
-    // If we want a server-side denylist, we use Redis here.
-    // For MVP, returning success is sufficient.
     res.status(200).json({
         status: 'success',
         message: 'Logged out successfully!'

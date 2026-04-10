@@ -73,6 +73,7 @@ exports.updateSchool = catchAsync(async (req, res, next) => {
 
     res.status(200).json({
         status: 'success',
+        message: 'School updated successfully!',
         data: { school }
     });
 });
@@ -89,8 +90,9 @@ exports.deleteSchool = catchAsync(async (req, res, next) => {
         resourceId: req.params.id
     });
 
-    res.status(204).json({
+    res.status(200).json({
         status: 'success',
+        message: 'School deleted successfully!',
         data: null
     });
 });
@@ -143,7 +145,11 @@ exports.updateBus = catchAsync(async (req, res, next) => {
         details: req.body
     });
 
-    res.status(200).json({ status: 'success', data: { bus } });
+    res.status(200).json({ 
+        status: 'success', 
+        message: 'Bus updated successfully!',
+        data: { bus } 
+    });
 });
 
 exports.deleteBus = catchAsync(async (req, res, next) => {
@@ -155,7 +161,11 @@ exports.deleteBus = catchAsync(async (req, res, next) => {
         resource: 'Bus',
         resourceId: req.params.id
     });
-    res.status(204).json({ status: 'success', data: null });
+    res.status(200).json({ 
+        status: 'success', 
+        message: 'Bus deleted successfully!',
+        data: null 
+    });
 });
 
 // --- ROUTE MANAGEMENT (ADMIN) ---
@@ -202,7 +212,11 @@ exports.updateRoute = catchAsync(async (req, res, next) => {
         resourceId: route._id,
         details: req.body
     });
-    res.status(200).json({ status: 'success', data: { route } });
+    res.status(200).json({ 
+        status: 'success', 
+        message: 'Route updated successfully!',
+        data: { route } 
+    });
 });
 
 exports.deleteRoute = catchAsync(async (req, res, next) => {
@@ -214,7 +228,11 @@ exports.deleteRoute = catchAsync(async (req, res, next) => {
         resource: 'Route',
         resourceId: req.params.id
     });
-    res.status(204).json({ status: 'success', data: null });
+    res.status(200).json({ 
+        status: 'success', 
+        message: 'Route deleted successfully!',
+        data: null 
+    });
 });
 
 // --- STUDENT MANAGEMENT (ADMIN) ---
@@ -262,7 +280,11 @@ exports.updateStudent = catchAsync(async (req, res, next) => {
         resourceId: student._id,
         details: req.body
     });
-    res.status(200).json({ status: 'success', data: { student } });
+    res.status(200).json({ 
+        status: 'success', 
+        message: 'Student updated successfully!',
+        data: { student } 
+    });
 });
 
 exports.deleteStudent = catchAsync(async (req, res, next) => {
@@ -274,7 +296,11 @@ exports.deleteStudent = catchAsync(async (req, res, next) => {
         resource: 'Student',
         resourceId: req.params.id
     });
-    res.status(204).json({ status: 'success', data: null });
+    res.status(200).json({ 
+        status: 'success', 
+        message: 'Student deleted successfully!',
+        data: null 
+    });
 });
 
 // --- OTHER ADMIN FEATURES ---
