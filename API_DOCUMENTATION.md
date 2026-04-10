@@ -36,6 +36,7 @@ Request a 4-digit code.
   {
     "status": "success",
     "message": "OTP sent successfully",
+    "role": "driver",
     "otp": "1234" 
   }
   ```
