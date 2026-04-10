@@ -19,6 +19,7 @@ class AuthService {
 
         // Remove sensitive fields from output
         if (user.toObject) user = user.toObject();
+        user.role = role; // Ensure role is inside the user object too
         delete user.password;
         delete user.otp;
         delete user.otpExpires;
