@@ -19,6 +19,30 @@ const RouteSchema = new mongoose.Schema({
             }
         }
     }],
+    startPoint: {
+        type: {
+            type: String,
+            enum: ['Point'],
+            default: 'Point'
+        },
+        coordinates: {
+            type: [Number], // [longitude, latitude]
+            default: [0, 0]
+        },
+        name: String
+    },
+    endPoint: {
+        type: {
+            type: String,
+            enum: ['Point'],
+            default: 'Point'
+        },
+        coordinates: {
+            type: [Number], // [longitude, latitude]
+            default: [0, 0]
+        },
+        name: String
+    },
     schoolId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'School',

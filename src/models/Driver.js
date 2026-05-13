@@ -16,6 +16,17 @@ const DriverSchema = new mongoose.Schema({
         unique: true,
         index: true // Important for lookup
     },
+    email: {
+        type: String,
+        unique: true,
+        sparse: true,
+        lowercase: true,
+        trim: true
+    },
+    password: {
+        type: String,
+        select: false
+    },
     otpSecret: {
         type: String,
         select: false

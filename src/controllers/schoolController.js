@@ -17,7 +17,7 @@ exports.getBuses = catchAsync(async (req, res, next) => {
         page,
         limit,
         search,
-        searchFields: ['busNumber'],
+        searchFields: ['busNumber', 'busId'],
         filter,
         populate: 'assignedDriver assignedRoute'
     });
@@ -95,7 +95,7 @@ exports.getDrivers = catchAsync(async (req, res, next) => {
         page,
         limit,
         search,
-        searchFields: ['name', 'phone', 'licenseNumber'],
+        searchFields: ['name', 'phone', 'licenseNumber', 'email'],
         filter,
         populate: 'assignedBus'
     });
@@ -250,7 +250,7 @@ exports.getStudents = catchAsync(async (req, res, next) => {
         page,
         limit,
         search,
-        searchFields: ['name', 'studentRollId', 'parentPhone'],
+        searchFields: ['name', 'studentRollId', 'parentPhone', 'parentEmail'],
         filter,
         populate: 'assignedBus assignedRoute'
     });

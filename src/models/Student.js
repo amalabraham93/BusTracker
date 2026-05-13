@@ -24,6 +24,15 @@ const StudentSchema = new mongoose.Schema({
         required: true,
         index: true // Critical for "Super-Parent" feature
     },
+    parentEmail: {
+        type: String,
+        lowercase: true,
+        trim: true
+    },
+    parentPassword: {
+        type: String,
+        select: false
+    },
     schoolId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'School',

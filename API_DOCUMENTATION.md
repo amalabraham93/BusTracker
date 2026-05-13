@@ -130,13 +130,45 @@ Admins can manage any resource in the system. All actions are **Logged** in the 
 
 ### 2. Resource Management
 Manage resources **strictly for your own school**. All actions are **Logged**.
-- **Endpoints**:
-    - `/school/buses` (GET/POST/PATCH/DELETE)
-    - `/school/drivers` (GET/POST/PATCH/DELETE)
-    - `/school/routes` (GET/POST/PATCH/DELETE)
-    - `/school/students` (GET/POST/PATCH/DELETE)
-- **Common Query Params for LIST APIs**:
-    - `page`, `limit`, `search`, `isActive` (Same as Admin)
+
+#### 🚌 Buses
+- **Endpoints**: `GET/POST/PATCH/DELETE /school/buses`
+- **Fields (List & Add)**:
+    - `busId`: Custom ID for the bus.
+    - `busNumber`: Registration number.
+    - `capacity`: Seating capacity.
+- **Searchable Fields**: `busNumber`, `busId`
+
+#### 👨‍✈️ Drivers
+- **Endpoints**: `GET/POST/PATCH/DELETE /school/drivers`
+- **Fields (List)**: `name`, `phone` (Mobile), `licenseNumber`, `email`
+- **Fields (Add)**: `name`, `phone`, `licenseNumber`, `email`, `password`
+- **Searchable Fields**: `name`, `phone`, `licenseNumber`, `email`
+
+#### 🛣️ Routes
+- **Endpoints**: `GET/POST/PATCH/DELETE /school/routes`
+- **Fields (List)**: `routeName`, `startPoint`, `endPoint`
+- **Fields (Add)**:
+    - `routeName`: Name of the route.
+    - `startPoint`: `{ "type": "Point", "coordinates": [lng, lat], "name": "Start Name" }`
+    - `endPoint`: `{ "type": "Point", "coordinates": [lng, lat], "name": "End Name" }`
+- **Note**: Stops are currently optional and not required for core route definition.
+
+#### 🎓 Students
+- **Endpoints**: `GET/POST/PATCH/DELETE /school/students`
+- **Fields (List)**:
+    - `name`: Student Name.
+    - `classGrade`: Class.
+    - `section`: Section.
+    - `parentPhone`: Parent Number.
+    - `assignedRoute`: Route (Populated).
+    - `parentEmail`, `parentPassword`: Parent Credentials.
+    - `studentRollId`: Roll No.
+- **Fields (Add)**: `name`, `classGrade`, `section`, `parentPhone`, `assignedRoute`, `parentEmail`, `studentRollId`
+- **Searchable Fields**: `name`, `studentRollId`, `parentPhone`, `parentEmail`
+
+#### Common Query Params for LIST APIs:
+- `page`, `limit`, `search`, `isActive`
 
 ---
 

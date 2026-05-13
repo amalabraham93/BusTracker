@@ -6,6 +6,11 @@ const BusSchema = new mongoose.Schema({
         required: true,
         unique: true
     },
+    busId: {
+        type: String,
+        unique: true,
+        sparse: true
+    },
     capacity: {
         type: Number,
         required: true
