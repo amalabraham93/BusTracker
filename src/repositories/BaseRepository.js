@@ -29,8 +29,10 @@ class BaseRepository {
 
         // 1. Handle Search (case-insensitive regex)
         if (search && searchFields.length > 0) {
+            // Escape special regex characters
+            const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
             query.$or = searchFields.map(field => ({
-                [field]: { $regex: search, $options: 'i' }
+                [field]: { $regex: escapedSearch, $options: 'i' }
             }));
         }
 
@@ -39,9 +41,13 @@ class BaseRepository {
 
         // 3. Handle Pagination (Optional)
         const isPaging = limit !== undefined && limit !== null && limit !== '';
+        let p = Number(page) || 1;
+        let l = Number(limit);
+
         if (isPaging) {
-            const p = Number(page) || 1;
-            const l = Number(limit);
+            if (isNaN(l) || l <= 0) l = 10; // Default if invalid
+            if (isNaN(p) || p <= 0) p = 1;
+            
             const skip = (p - 1) * l;
             mongoQuery = mongoQuery.skip(skip).limit(l);
         }
@@ -59,9 +65,9 @@ class BaseRepository {
         return {
             data,
             total,
-            page: isPaging ? Number(page || 1) : 1,
-            limit: isPaging ? Number(limit) : total,
-            totalPages: isPaging ? Math.ceil(total / Number(limit)) : 1
+            page: isPaging ? p : 1,
+            limit: isPaging ? l : total,
+            totalPages: isPaging ? Math.ceil(total / l) : 1
         };
     }
 

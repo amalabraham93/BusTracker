@@ -216,11 +216,36 @@ Connect to `socket.io` server for instant updates.
 
 ---
 
-### ⚠️ Error Handling
-Standard error format. 
+## ⚠️ Error Handling
+The API uses standard HTTP status codes and a consistent JSON error format.
+
+### Error Response Format
 ```json
 {
   "status": "fail", // or "error"
-  "message": "Error description here"
+  "message": "Descriptive error message"
 }
 ```
+
+### Common Error Codes:
+- **400 Bad Request**: 
+  - **Duplicate Data**: When a unique field (like phone, email, or busId) is already registered.
+  - **Validation Error**: When required fields are missing or invalid.
+  - **Invalid Query**: When pagination or search parameters are malformed.
+- **401 Unauthorized**: Missing or invalid JWT token.
+- **403 Forbidden**: Role-based access denied.
+- **404 Not Found**: Resource doesn't exist.
+- **500 Internal Server Error**: Unexpected server error.
+
+---
+
+## 🔍 Pagination & Search
+All LIST APIs support the following parameters:
+
+- **`page`**: The page number to retrieve (default: 1).
+- **`limit`**: Number of records per page. **If omitted, the API returns the full list.**
+- **`search`**: A string to search across primary fields (e.g., name, phone, number). 
+  - Special characters are automatically escaped.
+- **`isActive`**: Filter by active/inactive status (`true`/`false`).
+
+---
