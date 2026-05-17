@@ -26,6 +26,11 @@ exports.getBuses = catchAsync(async (req, res, next) => {
 });
 
 exports.createBus = catchAsync(async (req, res, next) => {
+    if (req.body.assignedRoute) {
+        const route = await RouteRepository.findOne({ _id: req.body.assignedRoute, schoolId: req.user.id });
+        if (!route) return next(new AppError('Assigned route not found or access denied', 400));
+    }
+
     const data = { ...req.body, schoolId: req.user.id };
     const bus = await BusRepository.create(data);
     
@@ -48,6 +53,11 @@ exports.createBus = catchAsync(async (req, res, next) => {
 exports.updateBus = catchAsync(async (req, res, next) => {
     const bus = await BusRepository.findOne({ _id: req.params.id, schoolId: req.user.id });
     if (!bus) return next(new AppError('Bus not found or access denied', 404));
+
+    if (req.body.assignedRoute) {
+        const route = await RouteRepository.findOne({ _id: req.body.assignedRoute, schoolId: req.user.id });
+        if (!route) return next(new AppError('Assigned route not found or access denied', 400));
+    }
 
     const updatedBus = await BusRepository.update(req.params.id, req.body);
     await AuditLogRepository.logAction({
@@ -238,6 +248,19 @@ exports.deleteRoute = catchAsync(async (req, res, next) => {
     });
 });
 
+exports.getBusesByRoute = catchAsync(async (req, res, next) => {
+    const { routeId } = req.params;
+    const route = await RouteRepository.findOne({ _id: routeId, schoolId: req.user.id });
+    if (!route) return next(new AppError('Route not found or access denied', 404));
+
+    const buses = await BusRepository.findAll({ assignedRoute: routeId, schoolId: req.user.id });
+    res.status(200).json({
+        status: 'success',
+        results: buses.length,
+        data: { buses }
+    });
+});
+
 // --- STUDENT MANAGEMENT (SCHOOL) ---
 
 exports.getStudents = catchAsync(async (req, res, next) => {
@@ -259,6 +282,22 @@ exports.getStudents = catchAsync(async (req, res, next) => {
 });
 
 exports.createStudent = catchAsync(async (req, res, next) => {
+    const { assignedRoute, assignedBus } = req.body;
+
+    if (assignedRoute) {
+        const route = await RouteRepository.findOne({ _id: assignedRoute, schoolId: req.user.id });
+        if (!route) return next(new AppError('Assigned route not found or access denied', 400));
+    }
+
+    if (assignedBus) {
+        const bus = await BusRepository.findOne({ _id: assignedBus, schoolId: req.user.id });
+        if (!bus) return next(new AppError('Assigned bus not found or access denied', 400));
+
+        if (assignedRoute && bus.assignedRoute && bus.assignedRoute.toString() !== assignedRoute.toString()) {
+            return next(new AppError('The selected bus is not assigned to this route', 400));
+        }
+    }
+
     const data = { ...req.body, schoolId: req.user.id };
     const student = await StudentRepository.create(data);
     
@@ -280,6 +319,23 @@ exports.createStudent = catchAsync(async (req, res, next) => {
 exports.updateStudent = catchAsync(async (req, res, next) => {
     const student = await StudentRepository.findOne({ _id: req.params.id, schoolId: req.user.id });
     if (!student) return next(new AppError('Student not found or access denied', 404));
+
+    const assignedRoute = req.body.assignedRoute !== undefined ? req.body.assignedRoute : student.assignedRoute;
+    const assignedBus = req.body.assignedBus !== undefined ? req.body.assignedBus : student.assignedBus;
+
+    if (assignedRoute) {
+        const route = await RouteRepository.findOne({ _id: assignedRoute, schoolId: req.user.id });
+        if (!route) return next(new AppError('Assigned route not found or access denied', 400));
+    }
+
+    if (assignedBus) {
+        const bus = await BusRepository.findOne({ _id: assignedBus, schoolId: req.user.id });
+        if (!bus) return next(new AppError('Assigned bus not found or access denied', 400));
+
+        if (assignedRoute && bus.assignedRoute && bus.assignedRoute.toString() !== assignedRoute.toString()) {
+            return next(new AppError('The selected bus is not assigned to this route', 400));
+        }
+    }
 
     const updatedStudent = await StudentRepository.update(req.params.id, req.body);
     await AuditLogRepository.logAction({

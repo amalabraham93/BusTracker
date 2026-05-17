@@ -27,6 +27,7 @@ router.post('/routes', [
 ], schoolController.createRoute);
 router.patch('/routes/:id', schoolController.updateRoute);
 router.delete('/routes/:id', schoolController.deleteRoute);
+router.get('/routes/:routeId/buses', schoolController.getBusesByRoute);
 
 // --- DRIVER MANAGEMENT ---
 router.get('/drivers', schoolController.getDrivers);

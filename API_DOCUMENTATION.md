@@ -146,7 +146,9 @@ Manage resources **strictly for your own school**. All actions are **Logged**.
 - **Searchable Fields**: `name`, `phone`, `licenseNumber`, `email`
 
 #### 🛣️ Routes
-- **Endpoints**: `GET/POST/PATCH/DELETE /school/routes`
+- **Endpoints**: 
+    - `GET/POST/PATCH/DELETE /school/routes`
+    - `GET /school/routes/:routeId/buses` (Retrieve all buses assigned to this route)
 - **Fields (List)**: `routeName`, `startPoint`, `endPoint`
 - **Fields (Add)**:
     - `routeName`: Name of the route.
@@ -162,9 +164,13 @@ Manage resources **strictly for your own school**. All actions are **Logged**.
     - `section`: Section.
     - `parentPhone`: Parent Number.
     - `assignedRoute`: Route (Populated).
+    - `assignedBus`: Bus (Populated).
     - `parentEmail`, `parentPassword`: Parent Credentials.
     - `studentRollId`: Roll No.
-- **Fields (Add)**: `name`, `classGrade`, `section`, `parentPhone`, `assignedRoute`, `parentEmail`, `studentRollId`
+- **Fields (Add)**: `name`, `classGrade`, `section`, `parentPhone`, `assignedRoute`, `assignedBus`, `parentEmail`, `studentRollId`
+- **Validation Constraints**: 
+    - `assignedRoute` (if provided) must exist and belong to the school.
+    - `assignedBus` (if provided) must exist, belong to the school, and be assigned to the student's `assignedRoute`.
 - **Searchable Fields**: `name`, `studentRollId`, `parentPhone`, `parentEmail`
 
 #### Common Query Params for LIST APIs:
