@@ -9,8 +9,8 @@ class StudentRepository extends BaseRepository {
     async findByParentPhone(phone) {
         return await this.model.find({ parentPhone: phone })
             .populate('schoolId', 'name address')
-            .populate('assignedBus', 'busNumber')
-            .populate('assignedRoute', 'routeName');
+            .populate('assignedBus', 'busNumber busId capacity')
+            .populate('assignedRoute', 'routeName startPoint endPoint');
     }
 
     async findNearbyStudents(lat, lng, radiusInKm, excludeIds = []) {
