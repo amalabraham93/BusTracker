@@ -32,7 +32,8 @@ exports.createBus = catchAsync(async (req, res, next) => {
     }
 
     const data = { ...req.body, schoolId: req.user.id };
-    const bus = await BusRepository.create(data);
+    let bus = await BusRepository.create(data);
+    bus = await bus.populate('assignedDriver assignedRoute');
     
     await AuditLogRepository.logAction({
         userId: req.user.id,
@@ -59,7 +60,9 @@ exports.updateBus = catchAsync(async (req, res, next) => {
         if (!route) return next(new AppError('Assigned route not found or access denied', 400));
     }
 
-    const updatedBus = await BusRepository.update(req.params.id, req.body);
+    let updatedBus = await BusRepository.update(req.params.id, req.body);
+    updatedBus = await updatedBus.populate('assignedDriver assignedRoute');
+
     await AuditLogRepository.logAction({
         userId: req.user.id,
         userRole: 'school',
@@ -299,7 +302,8 @@ exports.createStudent = catchAsync(async (req, res, next) => {
     }
 
     const data = { ...req.body, schoolId: req.user.id };
-    const student = await StudentRepository.create(data);
+    let student = await StudentRepository.create(data);
+    student = await student.populate('assignedBus assignedRoute');
     
     await AuditLogRepository.logAction({
         userId: req.user.id,
@@ -337,7 +341,9 @@ exports.updateStudent = catchAsync(async (req, res, next) => {
         }
     }
 
-    const updatedStudent = await StudentRepository.update(req.params.id, req.body);
+    let updatedStudent = await StudentRepository.update(req.params.id, req.body);
+    updatedStudent = await updatedStudent.populate('assignedBus assignedRoute');
+
     await AuditLogRepository.logAction({
         userId: req.user.id,
         userRole: 'school',

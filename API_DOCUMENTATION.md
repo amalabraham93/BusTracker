@@ -137,6 +137,11 @@ Manage resources **strictly for your own school**. All actions are **Logged**.
     - `busId`: Custom ID for the bus.
     - `busNumber`: Registration number.
     - `capacity`: Seating capacity.
+    - `assignedRoute`: The Route ID assigned to this bus (Populated in list/get operations).
+- **Route Details (Populated on `GET`)**:
+    - `assignedRoute.routeName`: Name of the route.
+    - `assignedRoute.startPoint`: GeoJSON start coordinate.
+    - `assignedRoute.endPoint`: GeoJSON end coordinate.
 - **Searchable Fields**: `busNumber`, `busId`
 
 #### 👨‍✈️ Drivers
