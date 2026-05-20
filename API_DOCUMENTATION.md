@@ -142,7 +142,8 @@ Admins can manage any resource in the system. All actions are **Logged** in the 
 ### 1. Dashboard & Reports
 - **Dashboard**: `GET /school/dashboard`
 - **Attendance**: `GET /school/attendance`
-- **Live**: `GET /school/live-tracking`
+- **Live Tracking (Drivers)**: `GET /school/live-tracking`
+- **Active Trips (Map/List View)**: `GET /school/active-trips` (Returns all ongoing trips with real-time driver coordinates, bus, and route details)
 
 ### 2. Resource Management
 Manage resources **strictly for your own school**. All actions are **Logged**.
@@ -203,10 +204,12 @@ Manage resources **strictly for your own school**. All actions are **Logged**.
 *Requires `Driver` Role*
 
 ### 1. Core Operations
-- **Dashboard**: `GET /driver/dashboard`
-- **Start Trip**: `POST /driver/trip/start`
+- **Dashboard**: `GET /driver/dashboard` (Returns `tripStatus: 'Ongoing'` or `'pending'` and contextual data)
+- **Get Students List**: `GET /driver/students?routeId=X&busId=Y`
+- **Start Trip**: `POST /driver/trip/start` (Body requires `busId`, `routeId`, `schoolId`, and `type` (Pickup/Drop))
 - **Update Location**: `PATCH /driver/trip/location`
 - **Mark Attendance**: `POST /driver/attendance`
+- **End Trip**: `POST /driver/trip/end`
 
 ### 2. Instant Alerts (New)
 Drivers can push real-time alerts to parents and schools.
@@ -226,13 +229,16 @@ Drivers can push real-time alerts to parents and schools.
 Connect to `socket.io` server for instant updates.
 
 ### Rooms to Join
-- **`route:<routeId>`**: Join this to receive alerts for a specific bus route.
+- **`route:<routeId>`**: Join this to receive initial `tripStarted` alerts for a specific bus route.
+- **`trip:<tripId>`**: **(NEW)** Join this immediately after a trip starts to receive real-time 2-second location updates and `tripEnded` alerts for that specific trip.
 - **`school:<schoolId>`**: Join this (School Admins) to receive emergency panic alerts.
 
 ### Events
-- **`routeAlert`**: Data: `{ type, message, timestamp }`
-- **`emergencyAlert`**: Data: `{ driverName, driverPhone, message, timestamp }`
-- **`locationUpdate`**: Data: `{ driverId, lat, lng }` (Sent to room `route:ID`)
+- **`tripStarted`**: Data: `{ tripId, type }` (Sent to room `route:ID`. Parents use this `tripId` to join the trip room)
+- **`tripEnded`**: Data: `{ tripId }` (Sent to room `trip:ID`)
+- **`routeAlert`**: Data: `{ type, message, timestamp }` (Sent to room `trip:ID`)
+- **`emergencyAlert`**: Data: `{ driverName, driverPhone, busId, tripId, message, timestamp }`
+- **`locationUpdate`**: Data: `{ driverId, lat, lng, tripId }` (Sent to room `trip:ID`)
 
 ---
 
