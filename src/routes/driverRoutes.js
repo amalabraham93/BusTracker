@@ -19,8 +19,11 @@ router.post('/trip/start', [
     body('busId').exists(),
     body('routeId').exists(),
     body('schoolId').exists(),
+    body('type').isIn(['Pickup', 'Drop']),
     validate
 ], driverController.startTrip);
+
+router.post('/trip/end', driverController.endTrip);
 
 router.patch('/trip/location', [
     body('lat').isNumeric(),
@@ -33,6 +36,9 @@ router.post('/attendance', [
     body('status').isIn(['Boarded', 'Dropped', 'Absent']),
     validate
 ], driverController.markAttendance);
+
+// Students
+router.get('/students', driverController.getStudentsByRouteAndBus);
 
 // Dashboard
 router.get('/dashboard', driverController.getDashboard);

@@ -3,17 +3,28 @@ const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/AppError');
 
 exports.startTrip = catchAsync(async (req, res, next) => {
-    const { busId, routeId, schoolId } = req.body;
+    const { busId, routeId, schoolId, type } = req.body;
     const driverId = req.user.id; // From Auth Middleware
 
-    if (!busId || !routeId || !schoolId) {
+    if (!busId || !routeId || !schoolId || !type) {
         return next(new AppError('Missing trip details', 400));
     }
 
-    const trip = await TripService.startTrip(driverId, busId, routeId, schoolId);
+    const trip = await TripService.startTrip(driverId, busId, routeId, schoolId, type);
 
     res.status(201).json({
         status: 'success',
+        data: { trip }
+    });
+});
+
+exports.endTrip = catchAsync(async (req, res, next) => {
+    const driverId = req.user.id;
+    const trip = await TripService.endTrip(driverId);
+    
+    res.status(200).json({
+        status: 'success',
+        message: 'Trip ended successfully',
         data: { trip }
     });
 });
@@ -54,44 +65,34 @@ exports.markAttendance = catchAsync(async (req, res, next) => {
 
 exports.getDashboard = catchAsync(async (req, res, next) => {
     const driverId = req.user.id;
-    // 1. Get Driver Details with populated Bus and Route
-    // We need to fetch Driver again to populate references if not already in req.user
-    // However, req.user from protect middleware usually has the raw document.
-    // Let's refetch to be safe and populate.
-    const DriverRepository = require('../repositories/DriverRepository'); // Direct repo access for simpler read
-
-    // Find driver and populate assignedBus and its route
-    // Note: Schema structure: Driver -> assignedBus (Bus) -> assignedRoute (Route - optional/if in Bus)
-    // Actually Driver schema has 'currentTripId' but static assignment might differ.
-    // The requirement says "Should select the bus, in that bus the route should be added already".
-    // This implies Bus has a Route.
+    const DriverRepository = require('../repositories/DriverRepository'); 
+    const { client: redisClient } = require('../config/redis');
 
     const driver = await DriverRepository.model.findById(driverId)
         .populate({
             path: 'assignedBus',
-            populate: { path: 'assignedRoute' } // Assuming Bus has assignedRoute
+            populate: { path: 'assignedRoute' } 
         });
 
     if (!driver) {
         return next(new AppError('Driver not found', 404));
     }
 
+    // Check if trip is active
+    const activeTripId = await redisClient.get(`driver:trip:${driverId}`);
+    const tripStatus = activeTripId ? 'Ongoing' : 'pending';
+
     let students = [];
-    if (driver.assignedBus && driver.assignedBus.assignedRoute) {
+    if (activeTripId && driver.assignedBus && driver.assignedBus.assignedRoute) {
         const routeId = driver.assignedBus.assignedRoute._id;
-        // Fetch students on this route
         const StudentRepository = require('../repositories/StudentRepository');
         students = await StudentRepository.model.find({ assignedRoute: routeId });
-    } else {
-        // Method 2: Maybe Driver is directly assigned to a route? 
-        // Our Driver model doesn't seem to have 'assignedRoute', but Bus does?
-        // Let's check Bus Schema later. If Bus has no route, check if Driver has it?
-        // For now assuming Bus -> Route.
     }
 
     res.status(200).json({
         status: 'success',
         data: {
+            tripStatus,
             driver: {
                 name: driver.name,
                 phone: driver.phone,
@@ -104,12 +105,32 @@ exports.getDashboard = catchAsync(async (req, res, next) => {
     });
 });
 
+exports.getStudentsByRouteAndBus = catchAsync(async (req, res, next) => {
+    const { routeId, busId } = req.query;
+    if (!routeId || !busId) {
+        return next(new AppError('Route ID and Bus ID are required', 400));
+    }
+    const StudentRepository = require('../repositories/StudentRepository');
+    const students = await StudentRepository.model.find({ assignedRoute: routeId, assignedBus: busId });
+    
+    res.status(200).json({
+        status: 'success',
+        data: { students }
+    });
+});
+
 exports.sendAlertToParents = catchAsync(async (req, res, next) => {
     const { type, message } = req.body;
     const driverId = req.user.id;
     const DriverRepository = require('../repositories/DriverRepository');
     const NotificationService = require('../services/NotificationService');
     const AuditLogRepository = require('../repositories/AuditLogRepository');
+    const { client: redisClient } = require('../config/redis');
+
+    const activeTripId = await redisClient.get(`driver:trip:${driverId}`);
+    if (!activeTripId) {
+        return next(new AppError('Cannot send alert. No ongoing trip.', 400));
+    }
 
     if (!['Route Change', 'Delay', 'Breakdown'].includes(type)) {
         return next(new AppError('Invalid alert type', 400));
@@ -120,23 +141,22 @@ exports.sendAlertToParents = catchAsync(async (req, res, next) => {
         return next(new AppError('No active route found for this driver', 400));
     }
 
-    const routeId = driver.assignedBus.assignedRoute;
     const alertData = {
         type,
         message: message || `There is a ${type} for your child's bus route.`,
         timestamp: new Date()
     };
 
-    // 1. Emit Socket Alert
-    await NotificationService.sendRealTimeAlert(`route:${routeId}`, 'routeAlert', alertData);
+    // 1. Emit Socket Alert to trip room instead of route room
+    await NotificationService.sendRealTimeAlert(`trip:${activeTripId}`, 'routeAlert', alertData);
 
     // 2. Log Action
     await AuditLogRepository.logAction({
         userId: driverId,
         userRole: 'driver',
         action: 'UPDATE',
-        resource: 'Route',
-        resourceId: routeId,
+        resource: 'Trip',
+        resourceId: activeTripId,
         details: { alertType: type, message: alertData.message }
     });
 
@@ -151,6 +171,12 @@ exports.sendEmergencyAlert = catchAsync(async (req, res, next) => {
     const DriverRepository = require('../repositories/DriverRepository');
     const NotificationService = require('../services/NotificationService');
     const AuditLogRepository = require('../repositories/AuditLogRepository');
+    const { client: redisClient } = require('../config/redis');
+
+    const activeTripId = await redisClient.get(`driver:trip:${driverId}`);
+    if (!activeTripId) {
+        return next(new AppError('Cannot send emergency alert. No ongoing trip.', 400));
+    }
 
     const driver = await DriverRepository.findById(driverId);
     if (!driver) return next(new AppError('Driver not found', 404));
@@ -160,6 +186,7 @@ exports.sendEmergencyAlert = catchAsync(async (req, res, next) => {
         driverName: driver.name,
         driverPhone: driver.phone,
         busId: driver.assignedBus,
+        tripId: activeTripId,
         message: 'EMERGENCY: Panic button pressed!',
         timestamp: new Date()
     };

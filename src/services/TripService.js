@@ -8,13 +8,14 @@ const AppError = require('../utils/AppError');
 const logger = require('../utils/logger');
 
 class TripService {
-    async startTrip(driverId, busId, routeId, schoolId) {
+    async startTrip(driverId, busId, routeId, schoolId, type) {
         // 1. Create Trip Record
         const trip = await TripRepository.create({
             driverId,
             busId,
             routeId,
             schoolId,
+            type,
             status: 'Active',
             startTime: new Date()
         });
@@ -30,14 +31,58 @@ class TripService {
 
         // 4. Notify Parents
         // Find students on this route/bus
-        // For MVP, broadcasting to route room via socket is fast
         try {
-            getIo().to(`route:${routeId}`).emit('tripStarted', { tripId: trip._id });
+            getIo().to(`route:${routeId}`).emit('tripStarted', { tripId: trip._id, type });
         } catch (e) {
             logger.warn('Socket not active for trip start');
         }
 
         // Ideally fetch parents and send Push Notifications here
+        return trip;
+    }
+
+    async endTrip(driverId) {
+        const tripId = await redisClient.get(`driver:trip:${driverId}`);
+        if (!tripId) {
+            throw new AppError('No active trip found', 404);
+        }
+
+        const trip = await TripRepository.findById(tripId);
+        if (!trip) {
+            throw new AppError('Trip not found', 404);
+        }
+
+        // 1. Update Trip Record
+        trip.status = 'Completed';
+        trip.endTime = new Date();
+        await trip.save();
+
+        // 2. Clear Driver Status & Redis
+        await DriverRepository.update(driverId, {
+            isActive: false,
+            currentTripId: null
+        });
+        await redisClient.del(`driver:trip:${driverId}`);
+
+        // 3. Notify Parents via Socket and Push
+        try {
+            getIo().to(`trip:${tripId}`).emit('tripEnded', { tripId });
+        } catch (e) {
+            logger.warn('Socket not active for trip end');
+        }
+
+        // Fetch students on this trip's route to notify parents
+        const students = await StudentRepository.model.find({ assignedRoute: trip.routeId });
+        for (const student of students) {
+            if (student.parentPhone) {
+                await NotificationService.sendPushNotification(
+                    student.parentPhone,
+                    'Trip Ended',
+                    `The bus trip (${trip.type}) has safely ended.`
+                );
+            }
+        }
+
         return trip;
     }
 
@@ -54,7 +99,7 @@ class TripService {
 
         // 3. Broadcast to Socket Room
         try {
-            getIo().to(`route:${trip.routeId}`).emit('locationUpdate', { lat, lng, tripId });
+            getIo().to(`trip:${tripId}`).emit('locationUpdate', { lat, lng, tripId });
         } catch (e) {
             // Socket might fail if not init
         }

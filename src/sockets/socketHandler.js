@@ -19,6 +19,11 @@ const initSocket = (server) => {
             logger.info(`Client ${socket.id} joined route:${routeId}`);
         });
 
+        socket.on('joinTrip', (tripId) => {
+            socket.join(`trip:${tripId}`);
+            logger.info(`Client ${socket.id} joined trip:${tripId}`);
+        });
+
         socket.on('joinSchool', (schoolId) => {
             socket.join(`school:${schoolId}`);
             logger.info(`Client ${socket.id} joined school:${schoolId}`);

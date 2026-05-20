@@ -21,6 +21,11 @@ const TripSchema = new mongoose.Schema({
         ref: 'School',
         required: true
     },
+    type: {
+        type: String,
+        enum: ['Pickup', 'Drop'],
+        required: true
+    },
     startTime: {
         type: Date,
         default: Date.now

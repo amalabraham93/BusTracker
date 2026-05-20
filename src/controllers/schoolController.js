@@ -476,3 +476,20 @@ exports.getLiveTracking = catchAsync(async (req, res, next) => {
         data: { drivers }
     });
 });
+
+exports.getActiveTrips = catchAsync(async (req, res, next) => {
+    const schoolId = req.user.id;
+    const TripRepository = require('../repositories/TripRepository');
+
+    // Get active trips and populate driver location for map view
+    const activeTrips = await TripRepository.model.find({ schoolId, status: 'Active' })
+        .populate('driverId', 'name phone currentLocation')
+        .populate('busId', 'busNumber capacity')
+        .populate('routeId', 'routeName');
+
+    res.status(200).json({
+        status: 'success',
+        results: activeTrips.length,
+        data: { activeTrips }
+    });
+});

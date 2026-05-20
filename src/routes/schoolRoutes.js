@@ -59,5 +59,6 @@ router.delete('/students/:id', schoolController.deleteStudent);
 router.get('/dashboard', schoolController.getDashboardStats);
 router.get('/attendance', schoolController.getAttendance);
 router.get('/live-tracking', schoolController.getLiveTracking);
+router.get('/active-trips', schoolController.getActiveTrips);
 
 module.exports = router;
