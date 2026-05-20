@@ -104,6 +104,22 @@ class AuthService {
         return school;
     }
 
+    async loginDriverEmail(email, password) {
+        const driver = await DriverRepository.model.findOne({ email }).select('+password');
+        if (!driver || driver.password !== password) {
+            throw new AppError('Incorrect email or password', 401);
+        }
+        return driver;
+    }
+
+    async loginParentEmail(email, password) {
+        const student = await StudentRepository.model.findOne({ parentEmail: email }).select('+parentPassword');
+        if (!student || student.parentPassword !== password) {
+            throw new AppError('Incorrect email or password', 401);
+        }
+        return { _id: student.parentPhone, phone: student.parentPhone, parentEmail: email, role: 'parent' };
+    }
+
     // Deprecated in favor of new verifyOtp flow but keeping for compatibility if needed
     async loginDriver(phone, otp) {
         return await this.verifyOtp(phone, 'driver', otp);
@@ -111,6 +127,35 @@ class AuthService {
 
     async loginParent(phone, otp) {
         return await this.verifyOtp(phone, 'parent', otp);
+    }
+
+    async changePassword(userId, role, currentPassword, newPassword) {
+        if (role === 'school') {
+            const school = await SchoolRepository.model.findById(userId).select('+password');
+            if (!school || school.password !== currentPassword) {
+                throw new AppError('Incorrect current password', 400);
+            }
+            school.password = newPassword;
+            await school.save();
+        } else if (role === 'driver') {
+            const driver = await DriverRepository.model.findById(userId).select('+password');
+            if (!driver || driver.password !== currentPassword) {
+                throw new AppError('Incorrect current password', 400);
+            }
+            driver.password = newPassword;
+            await driver.save();
+        } else if (role === 'parent') {
+            const student = await StudentRepository.model.findOne({ parentPhone: userId }).select('+parentPassword');
+            if (!student || student.parentPassword !== currentPassword) {
+                throw new AppError('Incorrect current password', 400);
+            }
+            await StudentRepository.model.updateMany(
+                { parentPhone: userId },
+                { parentPassword: newPassword }
+            );
+        } else {
+            throw new AppError('Password change not supported for this role', 400);
+        }
     }
 }
 

@@ -140,14 +140,18 @@ exports.updateDriver = catchAsync(async (req, res, next) => {
     const driver = await DriverRepository.findOne({ _id: req.params.id, schoolId: req.user.id });
     if (!driver) return next(new AppError('Driver not found or access denied', 404));
 
-    const updatedDriver = await DriverRepository.update(req.params.id, req.body);
+    // School cannot update driver password after creation
+    const updateData = { ...req.body };
+    delete updateData.password;
+
+    const updatedDriver = await DriverRepository.update(req.params.id, updateData);
     await AuditLogRepository.logAction({
         userId: req.user.id,
         userRole: 'school',
         action: 'UPDATE',
         resource: 'Driver',
         resourceId: driver._id,
-        details: req.body
+        details: updateData
     });
     res.status(200).json({ 
         status: 'success', 
@@ -341,7 +345,11 @@ exports.updateStudent = catchAsync(async (req, res, next) => {
         }
     }
 
-    let updatedStudent = await StudentRepository.update(req.params.id, req.body);
+    // School cannot update parent password after creation
+    const updateData = { ...req.body };
+    delete updateData.parentPassword;
+
+    let updatedStudent = await StudentRepository.update(req.params.id, updateData);
     updatedStudent = await updatedStudent.populate('assignedBus assignedRoute');
 
     await AuditLogRepository.logAction({
@@ -350,7 +358,7 @@ exports.updateStudent = catchAsync(async (req, res, next) => {
         action: 'UPDATE',
         resource: 'Student',
         resourceId: student._id,
-        details: req.body
+        details: updateData
     });
     res.status(200).json({ 
         status: 'success', 

@@ -61,15 +61,31 @@ A single endpoint handles initial login.
 - **Endpoint**: `/auth/login`
 - **Method**: `POST`
 
-**Request Body (School/Admin):**
-> **Note:** For schools, OTP is currently bypassed to ease testing. Currently requires email/password.
-```json
-{
-  "role": "school", // or "admin"
-  "email": "admin@greenwood.com",
-  "password": "password123"
-}
-```
+**Request Body Structure:**
+- **School / Admin**:
+  ```json
+  {
+    "role": "school", // or "admin"
+    "email": "admin@greenwood.com",
+    "password": "password123"
+  }
+  ```
+- **Driver / Parent (Email & Password)**:
+  ```json
+  {
+    "role": "driver", // or "parent"
+    "email": "praveen@yopmail.com",
+    "password": "Praveen@05"
+  }
+  ```
+- **Driver / Parent (Phone & OTP)**:
+  ```json
+  {
+    "role": "driver", // or "parent"
+    "phone": "9876543210",
+    "otp": "1234"
+  }
+  ```
 
 ### Logout
 Invalidate the current session (client should also clear the token).

@@ -27,14 +27,24 @@ exports.login = catchAsync(async (req, res, next) => {
         }
     }
     else if (role === 'driver') {
-        const { phone, otp } = req.body;
-        if (!phone || !otp) return next(new AppError('Please provide phone and OTP', 400));
-        user = await AuthService.loginDriver(phone, otp);
+        const { phone, otp, email, password } = req.body;
+        if (email && password) {
+            user = await AuthService.loginDriverEmail(email, password);
+        } else if (phone && otp) {
+            user = await AuthService.loginDriver(phone, otp);
+        } else {
+            return next(new AppError('Please provide phone and OTP, or email and password', 400));
+        }
     }
     else if (role === 'parent') {
-        const { phone, otp } = req.body;
-        if (!phone || !otp) return next(new AppError('Please provide phone and OTP', 400));
-        user = await AuthService.loginParent(phone, otp);
+        const { phone, otp, email, password } = req.body;
+        if (email && password) {
+            user = await AuthService.loginParentEmail(email, password);
+        } else if (phone && otp) {
+            user = await AuthService.loginParent(phone, otp);
+        } else {
+            return next(new AppError('Please provide phone and OTP, or email and password', 400));
+        }
     }
     else if (role === 'admin') {
         // Mock Admin login or implement Admin service
@@ -92,3 +102,16 @@ exports.logout = (req, res) => {
         message: 'Logged out successfully!'
     });
 };
+
+exports.changePassword = catchAsync(async (req, res, next) => {
+    const { currentPassword, newPassword } = req.body;
+    const userId = req.user.id;
+    const role = req.user.role;
+
+    await AuthService.changePassword(userId, role, currentPassword, newPassword);
+
+    res.status(200).json({
+        status: 'success',
+        message: 'Password changed successfully!'
+    });
+});

@@ -35,6 +35,7 @@ router.post('/drivers', [
     body('name').exists().withMessage('Driver name is required'),
     body('phone').exists().withMessage('Phone number is required'),
     body('licenseNumber').exists().withMessage('License number is required'),
+    body('password').exists().withMessage('Password is required'),
     validate
 ], schoolController.createDriver);
 router.patch('/drivers/:id', schoolController.updateDriver);
@@ -48,6 +49,7 @@ router.post('/students', [
     body('classGrade').exists().withMessage('Class/Grade is required'),
     body('section').exists().withMessage('Section is required'),
     body('parentPhone').exists().withMessage('Parent phone is required'),
+    body('parentPassword').exists().withMessage('Parent password is required'),
     validate
 ], schoolController.createStudent);
 router.patch('/students/:id', schoolController.updateStudent);

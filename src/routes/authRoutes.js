@@ -1,6 +1,7 @@
 const express = require('express');
 const authController = require('../controllers/authController');
 const validate = require('../middleware/validateMiddleware');
+const authMiddleware = require('../middleware/authMiddleware');
 const { body } = require('express-validator');
 
 const router = express.Router();
@@ -24,5 +25,12 @@ router.post('/verify-otp', [
 ], authController.verifyOtp);
 
 router.post('/logout', authController.logout);
+
+router.patch('/change-password', [
+    authMiddleware.protect,
+    body('currentPassword').exists().withMessage('Current password is required'),
+    body('newPassword').exists().withMessage('New password is required'),
+    validate
+], authController.changePassword);
 
 module.exports = router;
