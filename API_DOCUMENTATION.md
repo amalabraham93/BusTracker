@@ -205,6 +205,8 @@ Manage resources **strictly for your own school**. All actions are **Logged**.
 
 ### 1. Core Operations
 - **Dashboard**: `GET /driver/dashboard` (Returns `tripStatus: 'Ongoing'` or `'pending'` and contextual data)
+- **Get School Routes**: `GET /driver/routes` (Returns all routes for the driver's school)
+- **Get Buses by Route**: `GET /driver/routes/:routeId/buses` (Returns all buses assigned to a specific route)
 - **Get Students List**: `GET /driver/students?routeId=X&busId=Y`
 - **Start Trip**: `POST /driver/trip/start` (Body requires `busId`, `routeId`, `schoolId`, and `type` (Pickup/Drop))
 - **Update Location**: `PATCH /driver/trip/location`

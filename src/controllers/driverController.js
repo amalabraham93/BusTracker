@@ -209,3 +209,42 @@ exports.sendEmergencyAlert = catchAsync(async (req, res, next) => {
         message: 'Emergency alert sent to school administration'
     });
 });
+
+exports.getRoutes = catchAsync(async (req, res, next) => {
+    const driverId = req.user.id;
+    const DriverRepository = require('../repositories/DriverRepository');
+    const RouteRepository = require('../repositories/RouteRepository');
+
+    const driver = await DriverRepository.findById(driverId);
+    if (!driver) return next(new AppError('Driver not found', 404));
+
+    const routes = await RouteRepository.model.find({ schoolId: driver.schoolId });
+    
+    res.status(200).json({
+        status: 'success',
+        results: routes.length,
+        data: { routes }
+    });
+});
+
+exports.getBusesByRoute = catchAsync(async (req, res, next) => {
+    const { routeId } = req.params;
+    const driverId = req.user.id;
+    const DriverRepository = require('../repositories/DriverRepository');
+    const RouteRepository = require('../repositories/RouteRepository');
+    const BusRepository = require('../repositories/BusRepository');
+
+    const driver = await DriverRepository.findById(driverId);
+    if (!driver) return next(new AppError('Driver not found', 404));
+
+    const route = await RouteRepository.model.findOne({ _id: routeId, schoolId: driver.schoolId });
+    if (!route) return next(new AppError('Route not found or access denied', 404));
+
+    const buses = await BusRepository.model.find({ assignedRoute: routeId, schoolId: driver.schoolId });
+    
+    res.status(200).json({
+        status: 'success',
+        results: buses.length,
+        data: { buses }
+    });
+});

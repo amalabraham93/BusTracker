@@ -40,6 +40,10 @@ router.post('/attendance', [
 // Students
 router.get('/students', driverController.getStudentsByRouteAndBus);
 
+// Routes and Buses
+router.get('/routes', driverController.getRoutes);
+router.get('/routes/:routeId/buses', driverController.getBusesByRoute);
+
 // Dashboard
 router.get('/dashboard', driverController.getDashboard);
 
