@@ -83,10 +83,22 @@ exports.getDashboard = catchAsync(async (req, res, next) => {
     const tripStatus = activeTripId ? 'Ongoing' : 'pending';
 
     let students = [];
-    if (activeTripId && driver.assignedBus && driver.assignedBus.assignedRoute) {
-        const routeId = driver.assignedBus.assignedRoute._id;
-        const StudentRepository = require('../repositories/StudentRepository');
-        students = await StudentRepository.model.find({ assignedRoute: routeId });
+    let currentBus = driver.assignedBus;
+    let currentRoute = driver.assignedBus ? driver.assignedBus.assignedRoute : null;
+
+    if (activeTripId) {
+        const TripRepository = require('../repositories/TripRepository');
+        const trip = await TripRepository.model.findById(activeTripId).populate('busId routeId');
+        if (trip) {
+            currentBus = trip.busId;
+            currentRoute = trip.routeId;
+            
+            const StudentRepository = require('../repositories/StudentRepository');
+            students = await StudentRepository.model.find({ 
+                assignedRoute: trip.routeId._id || trip.routeId,
+                assignedBus: trip.busId._id || trip.busId 
+            });
+        }
     }
 
     res.status(200).json({
@@ -98,8 +110,8 @@ exports.getDashboard = catchAsync(async (req, res, next) => {
                 phone: driver.phone,
                 schoolId: driver.schoolId
             },
-            bus: driver.assignedBus,
-            route: driver.assignedBus ? driver.assignedBus.assignedRoute : null,
+            bus: currentBus,
+            route: currentRoute,
             students
         }
     });
