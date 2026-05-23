@@ -37,6 +37,8 @@ router.post('/attendance', [
     validate
 ], driverController.markAttendance);
 
+router.get('/attendance', driverController.getAttendanceStatus);
+
 // Students
 router.get('/students', driverController.getStudentsByRouteAndBus);
 

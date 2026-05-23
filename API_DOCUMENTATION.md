@@ -208,8 +208,26 @@ Manage resources **strictly for your own school**. All actions are **Logged**.
 - **Get School Routes**: `GET /driver/routes` (Returns all routes for the driver's school)
 - **Get Buses by Route**: `GET /driver/routes/:routeId/buses` (Returns all buses assigned to a specific route)
 - **Get Students List**: `GET /driver/students?routeId=X&busId=Y`
-- **Start Trip**: `POST /driver/trip/start` (Body requires `busId`, `routeId`, `schoolId`, and `type` (Pickup/Drop))
+- **Start Trip**: `POST /driver/trip/start`
+  - **Body Example**: 
+    ```json
+    {
+      "busId": "6a0aca94bac47f9fd79b7978",
+      "routeId": "6a06f3e7d2b6abe2f1ba9111",
+      "schoolId": "69d0dbd910f0e7824a1c3e26",
+      "type": "Pickup"
+    }
+    ```
 - **Update Location**: `PATCH /driver/trip/location`
+  - **Body Example**: 
+    ```json
+    {
+      "lat": 12.971598,
+      "lng": 77.594562
+    }
+    ```
+- **Get Trip Attendance Status**: `GET /driver/attendance`
+  - **Description**: Automatically retrieves the active trip and returns its assigned students. Each student includes an `attendanceStatus` (`Boarded`, `Dropped`, `Absent`, or `Pending`) and `attendanceTimestamp`.
 - **Mark Attendance**: `POST /driver/attendance`
   - **Body Example**: 
     ```json

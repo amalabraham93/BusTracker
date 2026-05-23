@@ -260,3 +260,48 @@ exports.getBusesByRoute = catchAsync(async (req, res, next) => {
         data: { buses }
     });
 });
+
+exports.getAttendanceStatus = catchAsync(async (req, res, next) => {
+    const driverId = req.user.id;
+    const { client: redisClient } = require('../config/redis');
+
+    const activeTripId = await redisClient.get(`driver:trip:${driverId}`);
+    if (!activeTripId) {
+        return next(new AppError('No active trip found to fetch attendance', 400));
+    }
+
+    const TripRepository = require('../repositories/TripRepository');
+    const trip = await TripRepository.model.findById(activeTripId);
+    if (!trip) return next(new AppError('Trip not found', 404));
+
+    const StudentRepository = require('../repositories/StudentRepository');
+    const AttendanceRepository = require('../repositories/AttendanceRepository');
+
+    const students = await StudentRepository.model.find({ 
+        assignedRoute: trip.routeId,
+        assignedBus: trip.busId 
+    }).lean();
+
+    const attendances = await AttendanceRepository.model.find({ tripId: activeTripId }).lean();
+
+    const attendanceMap = {};
+    attendances.forEach(a => {
+        if (!attendanceMap[a.studentId.toString()] || new Date(a.timestamp) > new Date(attendanceMap[a.studentId.toString()].timestamp)) {
+            attendanceMap[a.studentId.toString()] = {
+                status: a.status,
+                timestamp: a.timestamp
+            };
+        }
+    });
+
+    const studentsWithAttendance = students.map(student => ({
+        ...student,
+        attendanceStatus: attendanceMap[student._id.toString()]?.status || 'Pending',
+        attendanceTimestamp: attendanceMap[student._id.toString()]?.timestamp || null
+    }));
+
+    res.status(200).json({
+        status: 'success',
+        data: { students: studentsWithAttendance }
+    });
+});
