@@ -122,12 +122,20 @@ exports.getStudentsByRouteAndBus = catchAsync(async (req, res, next) => {
     if (!routeId || !busId) {
         return next(new AppError('Route ID and Bus ID are required', 400));
     }
+    
     const StudentRepository = require('../repositories/StudentRepository');
-    const students = await StudentRepository.model.find({ assignedRoute: routeId, assignedBus: busId });
+    const RouteRepository = require('../repositories/RouteRepository');
+    const BusRepository = require('../repositories/BusRepository');
+
+    const [students, route, bus] = await Promise.all([
+        StudentRepository.model.find({ assignedRoute: routeId, assignedBus: busId }),
+        RouteRepository.model.findById(routeId),
+        BusRepository.model.findById(busId)
+    ]);
     
     res.status(200).json({
         status: 'success',
-        data: { students }
+        data: { route, bus, students }
     });
 });
 
