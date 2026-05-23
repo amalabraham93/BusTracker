@@ -211,6 +211,14 @@ Manage resources **strictly for your own school**. All actions are **Logged**.
 - **Start Trip**: `POST /driver/trip/start` (Body requires `busId`, `routeId`, `schoolId`, and `type` (Pickup/Drop))
 - **Update Location**: `PATCH /driver/trip/location`
 - **Mark Attendance**: `POST /driver/attendance`
+  - **Body Example**: 
+    ```json
+    {
+      "studentId": "6a0b0ed080bacc188b4cb5d2",
+      "status": "Boarded"
+    }
+    ```
+  - **Allowed Statuses**: `Boarded`, `Dropped`, `Absent`
 - **End Trip**: `POST /driver/trip/end`
 
 ### 2. Instant Alerts (New)
