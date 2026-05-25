@@ -59,7 +59,9 @@ exports.markAttendance = catchAsync(async (req, res, next) => {
 
     res.status(200).json({
         status: 'success',
-        message: 'Attendance marked'
+        message: 'Attendance marked',
+        attendanceStatus: status,
+        studentId: studentId
     });
 });
 
@@ -310,6 +312,9 @@ exports.getAttendanceStatus = catchAsync(async (req, res, next) => {
 
     res.status(200).json({
         status: 'success',
-        data: { students: studentsWithAttendance }
+        data: { 
+            tripType: trip.type,
+            students: studentsWithAttendance 
+        }
     });
 });

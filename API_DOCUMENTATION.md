@@ -227,13 +227,22 @@ Manage resources **strictly for your own school**. All actions are **Logged**.
     }
     ```
 - **Get Trip Attendance Status**: `GET /driver/attendance`
-  - **Description**: Automatically retrieves the active trip and returns its assigned students. Each student includes an `attendanceStatus` (`Boarded`, `Dropped`, `Absent`, or `Pending`) and `attendanceTimestamp`.
+  - **Description**: Automatically retrieves the active trip and returns its `tripType` (`Pickup` or `Drop`) along with assigned students. Each student includes an `attendanceStatus` (`Boarded`, `Dropped`, `Absent`, or `Pending`) and `attendanceTimestamp`.
 - **Mark Attendance**: `POST /driver/attendance`
   - **Body Example**: 
     ```json
     {
       "studentId": "6a0b0ed080bacc188b4cb5d2",
       "status": "Boarded"
+    }
+    ```
+  - **Response Example**:
+    ```json
+    {
+      "status": "success",
+      "message": "Attendance marked",
+      "attendanceStatus": "Boarded",
+      "studentId": "6a0b0ed080bacc188b4cb5d2"
     }
     ```
   - **Allowed Statuses**: `Boarded`, `Dropped`, `Absent`
