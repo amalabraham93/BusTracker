@@ -158,9 +158,10 @@ exports.sendAlertToParents = catchAsync(async (req, res, next) => {
         return next(new AppError('Invalid alert type', 400));
     }
 
-    const driver = await DriverRepository.model.findById(driverId).populate('assignedBus');
-    if (!driver || !driver.assignedBus || !driver.assignedBus.assignedRoute) {
-        return next(new AppError('No active route found for this driver', 400));
+    const TripRepository = require('../repositories/TripRepository');
+    const trip = await TripRepository.model.findById(activeTripId);
+    if (!trip || !trip.routeId) {
+        return next(new AppError('No active route found for this trip', 400));
     }
 
     const alertData = {
@@ -203,11 +204,14 @@ exports.sendEmergencyAlert = catchAsync(async (req, res, next) => {
     const driver = await DriverRepository.findById(driverId);
     if (!driver) return next(new AppError('Driver not found', 404));
 
+    const TripRepository = require('../repositories/TripRepository');
+    const trip = await TripRepository.model.findById(activeTripId);
+
     const schoolId = driver.schoolId;
     const alertData = {
         driverName: driver.name,
         driverPhone: driver.phone,
-        busId: driver.assignedBus,
+        busId: trip ? trip.busId : null,
         tripId: activeTripId,
         message: 'EMERGENCY: Panic button pressed!',
         timestamp: new Date()
