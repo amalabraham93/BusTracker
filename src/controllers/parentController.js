@@ -10,7 +10,7 @@ exports.getChildren = catchAsync(async (req, res, next) => {
 
     let phone;
     if (req.user.role === 'parent') {
-        phone = req.user.phone;
+        phone = req.user.id;
     } else {
         phone = req.query.phone;
     }
@@ -33,7 +33,7 @@ const AttendanceRepository = require('../repositories/AttendanceRepository');
 
 exports.getStudentActivity = catchAsync(async (req, res, next) => {
     const { id } = req.params;
-    const phone = req.user.phone;
+    const phone = req.user.id;
 
     // Verify student belongs to parent
     const student = await StudentRepository.model.findOne({ _id: id, parentPhone: phone });
@@ -94,7 +94,7 @@ exports.getStudentActivity = catchAsync(async (req, res, next) => {
 
 exports.getStudentAttendance = catchAsync(async (req, res, next) => {
     const { id } = req.params;
-    const phone = req.user.phone;
+    const phone = req.user.id;
     const { month } = req.query; // format YYYY-MM
 
     if (!month || !/^\d{4}-\d{2}$/.test(month)) {

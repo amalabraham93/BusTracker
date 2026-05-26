@@ -52,7 +52,7 @@ exports.login = catchAsync(async (req, res, next) => {
         if (email === 'admin@admin.com' && password === 'admin123') {
             user = { _id: 'admin_id', name: 'Super Admin', email, role: 'admin' };
         } else {
-            return next(new AppError('Invalid admin credentials', 401));
+            return next(new AppError('Invalid admin credentials', 400));
         }
     }
     else {

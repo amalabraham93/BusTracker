@@ -87,7 +87,7 @@ class AuthService {
             // Check if phone exists in student records
             const student = await StudentRepository.findOne({ parentPhone: phone });
             if (!student) throw new AppError('Parent record no longer exists', 404);
-            user = { _id: phone, phone, role: 'parent' };
+            user = { _id: phone, phone, email: student.parentEmail, role: 'parent' };
         }
 
         await PhoneAuth.deleteOne({ _id: auth._id });
@@ -99,7 +99,7 @@ class AuthService {
         // ... (existing code, unchanged logic)
         const school = await SchoolRepository.model.findOne({ email }).select('+password +otp +otpExpires');
         if (!school || school.password !== password) {
-            throw new AppError('Incorrect email or password', 401);
+            throw new AppError('Incorrect email or password', 400);
         }
         return school;
     }
@@ -107,7 +107,7 @@ class AuthService {
     async loginDriverEmail(email, password) {
         const driver = await DriverRepository.model.findOne({ email }).select('+password');
         if (!driver || driver.password !== password) {
-            throw new AppError('Incorrect email or password', 401);
+            throw new AppError('Incorrect email or password', 400);
         }
         return driver;
     }
@@ -115,9 +115,9 @@ class AuthService {
     async loginParentEmail(email, password) {
         const student = await StudentRepository.model.findOne({ parentEmail: email }).select('+parentPassword');
         if (!student || student.parentPassword !== password) {
-            throw new AppError('Incorrect email or password', 401);
+            throw new AppError('Incorrect email or password', 400);
         }
-        return { _id: student.parentPhone, phone: student.parentPhone, parentEmail: email, role: 'parent' };
+        return { _id: student.parentPhone, phone: student.parentPhone, email: email, role: 'parent' };
     }
 
     // Deprecated in favor of new verifyOtp flow but keeping for compatibility if needed

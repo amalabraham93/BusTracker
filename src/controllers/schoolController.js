@@ -345,12 +345,18 @@ exports.updateStudent = catchAsync(async (req, res, next) => {
         }
     }
 
-    // School cannot update parent password after creation
     const updateData = { ...req.body };
-    delete updateData.parentPassword;
 
     let updatedStudent = await StudentRepository.update(req.params.id, updateData);
     updatedStudent = await updatedStudent.populate('assignedBus assignedRoute');
+
+    // If parent password was updated, sync it across all siblings with the same parent phone
+    if (req.body.parentPassword) {
+        await StudentRepository.model.updateMany(
+            { parentPhone: updatedStudent.parentPhone, schoolId: req.user.id },
+            { parentPassword: req.body.parentPassword }
+        );
+    }
 
     await AuditLogRepository.logAction({
         userId: req.user.id,
