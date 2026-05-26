@@ -107,6 +107,7 @@ exports.getDashboard = catchAsync(async (req, res, next) => {
         status: 'success',
         data: {
             tripStatus,
+            tripId: activeTripId || null,
             driver: {
                 name: driver.name,
                 phone: driver.phone,

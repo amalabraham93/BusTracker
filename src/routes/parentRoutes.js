@@ -9,4 +9,7 @@ router.use(authMiddleware.protect);
 // Allowed for parents and admins?
 router.get('/children', parentController.getChildren);
 
+router.get('/student/:id/activity', parentController.getStudentActivity);
+router.get('/student/:id/attendance', parentController.getStudentAttendance);
+
 module.exports = router;

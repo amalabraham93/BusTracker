@@ -9,6 +9,10 @@ class TripRepository extends BaseRepository {
     async findActiveTripByDriver(driverId) {
         return await this.model.findOne({ driverId, status: 'Active' });
     }
+
+    async findActiveTripByRouteAndBus(routeId, busId) {
+        return await this.model.findOne({ routeId, busId, status: 'Active' }).populate('driverId', 'currentLocation name');
+    }
 }
 
 module.exports = new TripRepository();

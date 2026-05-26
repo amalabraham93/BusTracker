@@ -280,9 +280,27 @@ Connect to `socket.io` server for instant updates.
 ---
 
 ## 👨‍👩‍👧 Parent Access
-*Requires `Parent` Role (Phone Auth)*
+*Requires `Parent` Role*
 
-- **Get My Children**: `GET /parent/children`
+### 1. Unified Login
+- **Endpoint**: `/auth/login`
+- **Method**: `POST`
+- **Description**: Parents log in using `role: "parent"` with either `email` and `password` or `phone` and `otp`. Since multiple students can share the same parent email or phone, the generated auth token will provide access to all linked students automatically.
+
+### 2. Dashboard (Get Children)
+- **Endpoint**: `/parent/children`
+- **Method**: `GET`
+- **Description**: Returns all students assigned to the logged-in parent, populated with `schoolId`, `assignedBus`, `assignedRoute`, `classGrade`, and `section`.
+
+### 3. Real-Time Activity
+- **Endpoint**: `/parent/student/:id/activity`
+- **Method**: `GET`
+- **Description**: Checks if the student's assigned bus/route has an active trip. If `"ongoing"`, it returns a timeline `activity` array (e.g. `Trip Started`, `Boarded`, `Dropped`) and the `lastLocation` of the bus. If no trip is running, returns `"not started"`.
+
+### 4. Attendance History
+- **Endpoint**: `/parent/student/:id/attendance?month=YYYY-MM`
+- **Method**: `GET`
+- **Description**: Returns all attendance records for a given student filtered by a specific month (e.g., `2026-05`).
 
 ---
 
