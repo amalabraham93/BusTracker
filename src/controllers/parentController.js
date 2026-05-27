@@ -36,7 +36,11 @@ exports.getStudentActivity = catchAsync(async (req, res, next) => {
     const phone = req.user.id;
 
     // Verify student belongs to parent
-    const student = await StudentRepository.model.findOne({ _id: id, parentPhone: phone });
+    const student = await StudentRepository.model.findOne({ _id: id, parentPhone: phone })
+        .populate('schoolId', 'name address phone email')
+        .populate('assignedRoute', 'routeName startPoint endPoint')
+        .populate('assignedBus', 'busNumber capacity');
+
     if (!student) {
         return next(new AppError('Student not found or access denied', 404));
     }
@@ -48,12 +52,15 @@ exports.getStudentActivity = catchAsync(async (req, res, next) => {
                 tripStatus: 'not started',
                 tripId: null,
                 lastLocation: null,
+                school: student.schoolId,
+                route: student.assignedRoute,
+                bus: student.assignedBus,
                 activity: []
             }
         });
     }
 
-    const trip = await TripRepository.findActiveTripByRouteAndBus(student.assignedRoute, student.assignedBus);
+    const trip = await TripRepository.findActiveTripByRouteAndBus(student.assignedRoute._id, student.assignedBus._id);
     
     if (!trip) {
         return res.status(200).json({
@@ -62,6 +69,9 @@ exports.getStudentActivity = catchAsync(async (req, res, next) => {
                 tripStatus: 'not started',
                 tripId: null,
                 lastLocation: null,
+                school: student.schoolId,
+                route: student.assignedRoute,
+                bus: student.assignedBus,
                 activity: []
             }
         });
@@ -87,6 +97,9 @@ exports.getStudentActivity = catchAsync(async (req, res, next) => {
             tripStatus: 'ongoing',
             tripId: trip._id,
             lastLocation: trip.driverId && trip.driverId.currentLocation ? trip.driverId.currentLocation : null,
+            school: student.schoolId,
+            route: student.assignedRoute,
+            bus: student.assignedBus,
             activity
         }
     });
@@ -101,7 +114,11 @@ exports.getStudentAttendance = catchAsync(async (req, res, next) => {
         return next(new AppError('Valid month required in format YYYY-MM', 400));
     }
 
-    const student = await StudentRepository.model.findOne({ _id: id, parentPhone: phone });
+    const student = await StudentRepository.model.findOne({ _id: id, parentPhone: phone })
+        .populate('schoolId', 'name address phone email')
+        .populate('assignedRoute', 'routeName startPoint endPoint')
+        .populate('assignedBus', 'busNumber capacity');
+
     if (!student) {
         return next(new AppError('Student not found or access denied', 404));
     }
@@ -112,6 +129,9 @@ exports.getStudentAttendance = catchAsync(async (req, res, next) => {
     res.status(200).json({
         status: 'success',
         results: attendance.length,
-        data: { attendance }
+        data: { 
+            student,
+            attendance 
+        }
     });
 });
