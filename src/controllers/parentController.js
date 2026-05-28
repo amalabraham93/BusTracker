@@ -51,6 +51,7 @@ exports.getStudentActivity = catchAsync(async (req, res, next) => {
             data: {
                 tripStatus: 'not started',
                 tripId: null,
+                tripType: null,
                 lastLocation: null,
                 student,
                 school: student.schoolId,
@@ -69,6 +70,7 @@ exports.getStudentActivity = catchAsync(async (req, res, next) => {
             data: {
                 tripStatus: 'not started',
                 tripId: null,
+                tripType: null,
                 lastLocation: null,
                 student,
                 school: student.schoolId,
@@ -98,6 +100,7 @@ exports.getStudentActivity = catchAsync(async (req, res, next) => {
         data: {
             tripStatus: 'ongoing',
             tripId: trip._id,
+            tripType: trip.type,
             lastLocation: trip.driverId && trip.driverId.currentLocation ? trip.driverId.currentLocation : null,
             student,
             school: student.schoolId,
