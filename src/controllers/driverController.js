@@ -129,6 +129,10 @@ exports.getStudentsByRouteAndBus = catchAsync(async (req, res, next) => {
     const StudentRepository = require('../repositories/StudentRepository');
     const RouteRepository = require('../repositories/RouteRepository');
     const BusRepository = require('../repositories/BusRepository');
+    const { client: redisClient } = require('../config/redis');
+
+    const driverId = req.user.id;
+    const activeTripId = await redisClient.get(`driver:trip:${driverId}`);
 
     const [students, route, bus] = await Promise.all([
         StudentRepository.model.find({ assignedRoute: routeId, assignedBus: busId }),
@@ -138,7 +142,7 @@ exports.getStudentsByRouteAndBus = catchAsync(async (req, res, next) => {
     
     res.status(200).json({
         status: 'success',
-        data: { route, bus, students }
+        data: { tripId: activeTripId || null, route, bus, students }
     });
 });
 

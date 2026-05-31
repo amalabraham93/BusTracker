@@ -208,6 +208,7 @@ Manage resources **strictly for your own school**. All actions are **Logged**.
 - **Get School Routes**: `GET /driver/routes` (Returns all routes for the driver's school)
 - **Get Buses by Route**: `GET /driver/routes/:routeId/buses` (Returns all buses assigned to a specific route)
 - **Get Students List**: `GET /driver/students?routeId=X&busId=Y`
+  - **Description**: Returns `route`, `bus`, `students`, and the active `tripId` (if a trip is ongoing, otherwise `null`).
 - **Start Trip**: `POST /driver/trip/start`
   - **Body Example**: 
     ```json
@@ -266,9 +267,11 @@ Drivers can push real-time alerts to parents and schools.
 Connect to `socket.io` server for instant updates.
 
 ### Rooms to Join
-- **`route:<routeId>`**: Join this to receive initial `tripStarted` alerts for a specific bus route.
-- **`trip:<tripId>`**: **(NEW)** Join this immediately after a trip starts to receive real-time 2-second location updates and `tripEnded` alerts for that specific trip.
-- **`school:<schoolId>`**: Join this (School Admins) to receive emergency panic alerts.
+*(Note: All room join events accept an optional acknowledgment callback that returns `{ status: "success", message: "Joined..." }`)*
+
+- **`route:<routeId>`**: Join this to receive initial `tripStarted` alerts for a specific bus route. (Event: `joinRoute`)
+- **`trip:<tripId>`**: Join this immediately after a trip starts to receive real-time 2-second location updates and `tripEnded` alerts for that specific trip. (Event: `joinTrip`)
+- **`school:<schoolId>`**: Join this (School Admins) to receive emergency panic alerts. (Event: `joinSchool`)
 
 ### Events
 - **`tripStarted`**: Data: `{ tripId, type }` (Sent to room `route:ID`. Parents use this `tripId` to join the trip room)

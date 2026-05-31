@@ -14,19 +14,28 @@ const initSocket = (server) => {
     io.on('connection', (socket) => {
         logger.info(`New client connected: ${socket.id}`);
 
-        socket.on('joinRoute', (routeId) => {
+        socket.on('joinRoute', (routeId, callback) => {
             socket.join(`route:${routeId}`);
             logger.info(`Client ${socket.id} joined route:${routeId}`);
+            if (typeof callback === 'function') {
+                callback({ status: 'success', message: `Joined route:${routeId}` });
+            }
         });
 
-        socket.on('joinTrip', (tripId) => {
+        socket.on('joinTrip', (tripId, callback) => {
             socket.join(`trip:${tripId}`);
             logger.info(`Client ${socket.id} joined trip:${tripId}`);
+            if (typeof callback === 'function') {
+                callback({ status: 'success', message: `Joined trip:${tripId}` });
+            }
         });
 
-        socket.on('joinSchool', (schoolId) => {
+        socket.on('joinSchool', (schoolId, callback) => {
             socket.join(`school:${schoolId}`);
             logger.info(`Client ${socket.id} joined school:${schoolId}`);
+            if (typeof callback === 'function') {
+                callback({ status: 'success', message: `Joined school:${schoolId}` });
+            }
         });
 
         socket.on('disconnect', () => {
