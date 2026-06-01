@@ -38,6 +38,25 @@ const initSocket = (server) => {
             }
         });
 
+        socket.on('locationUpdate', async (data) => {
+            const { tripId, lat, lng } = data;
+            if (!tripId || !lat || !lng) return;
+
+            try {
+                // Lazy load to avoid circular dependency with TripService
+                const TripRepository = require('../repositories/TripRepository');
+                const TripService = require('../services/TripService');
+                
+                const trip = await TripRepository.model.findById(tripId).select('driverId');
+                if (trip && trip.driverId) {
+                    // This will update DB, do proximity checks, and broadcast the location to parents
+                    await TripService.updateLocation(trip.driverId, lat, lng);
+                }
+            } catch (err) {
+                logger.error('Error handling socket locationUpdate: ' + err.message);
+            }
+        });
+
         socket.on('disconnect', () => {
             logger.info(`Client disconnected: ${socket.id}`);
         });
