@@ -164,7 +164,7 @@ exports.sendAlertToParents = catchAsync(async (req, res, next) => {
     }
 
     const TripRepository = require('../repositories/TripRepository');
-    const trip = await TripRepository.model.findById(activeTripId);
+    const trip = await TripRepository.model.findById(activeTripId).populate('routeId busId');
     if (!trip || !trip.routeId) {
         return next(new AppError('No active route found for this trip', 400));
     }
@@ -172,7 +172,12 @@ exports.sendAlertToParents = catchAsync(async (req, res, next) => {
     const alertData = {
         type,
         message: message || `There is a ${type} for your child's bus route.`,
-        timestamp: new Date()
+        timestamp: new Date(),
+        student_name: '',
+        student_id: '',
+        route_name: trip.routeId ? trip.routeId.routeName : '',
+        busNumber: trip.busId ? trip.busId.busNumber : '',
+        busId: trip.busId ? trip.busId._id.toString() : ''
     };
 
     // 1. Emit Socket Alert to trip room instead of route room
@@ -210,20 +215,25 @@ exports.sendEmergencyAlert = catchAsync(async (req, res, next) => {
     if (!driver) return next(new AppError('Driver not found', 404));
 
     const TripRepository = require('../repositories/TripRepository');
-    const trip = await TripRepository.model.findById(activeTripId);
+    const trip = await TripRepository.model.findById(activeTripId).populate('routeId busId');
+    if (!trip || !trip.routeId) {
+        return next(new AppError('No active route found for this driver', 400));
+    }
 
     const schoolId = driver.schoolId;
-    const alertData = {
+    const emergencyData = {
         driverName: driver.name,
         driverPhone: driver.phone,
-        busId: trip ? trip.busId : null,
+        busId: trip.busId ? trip.busId._id.toString() : '',
+        busNumber: trip.busId ? trip.busId.busNumber : '',
+        routeName: trip.routeId ? trip.routeId.routeName : '',
         tripId: activeTripId,
         message: 'EMERGENCY: Panic button pressed!',
         timestamp: new Date()
     };
 
     // 1. Emit Socket Alert to School
-    await NotificationService.sendRealTimeAlert(`school:${schoolId}`, 'emergencyAlert', alertData);
+    await NotificationService.sendRealTimeAlert(`school:${schoolId}`, 'emergencyAlert', emergencyData);
 
     // 2. Log Action
     await AuditLogRepository.logAction({
@@ -232,7 +242,7 @@ exports.sendEmergencyAlert = catchAsync(async (req, res, next) => {
         action: 'UPDATE',
         resource: 'School',
         resourceId: schoolId,
-        details: { emergency: true, message: alertData.message }
+        details: { emergency: true, message: emergencyData.message }
     });
 
     res.status(200).json({

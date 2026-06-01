@@ -32,7 +32,16 @@ class TripService {
         // 4. Notify Parents
         // Find students on this route/bus
         try {
-            getIo().to(`route:${routeId}`).emit('tripStarted', { tripId: trip._id, type });
+            const populatedTrip = await TripRepository.model.findById(trip._id).populate('routeId busId');
+            getIo().to(`route:${routeId}`).emit('tripStarted', { 
+                tripId: trip._id, 
+                type,
+                student_name: '',
+                student_id: '',
+                route_name: populatedTrip.routeId ? populatedTrip.routeId.routeName : '',
+                busNumber: populatedTrip.busId ? populatedTrip.busId.busNumber : '',
+                busId: populatedTrip.busId ? populatedTrip.busId._id.toString() : ''
+            });
         } catch (e) {
             logger.warn('Socket not active for trip start');
         }
@@ -66,7 +75,16 @@ class TripService {
 
         // 3. Notify Parents via Socket and Push
         try {
-            getIo().to(`trip:${tripId}`).emit('tripEnded', { tripId });
+            const populatedTrip = await TripRepository.model.findById(trip._id).populate('routeId busId');
+            getIo().to(`trip:${tripId}`).emit('tripEnded', { 
+                tripId,
+                type: populatedTrip.type,
+                student_name: '',
+                student_id: '',
+                route_name: populatedTrip.routeId ? populatedTrip.routeId.routeName : '',
+                busNumber: populatedTrip.busId ? populatedTrip.busId.busNumber : '',
+                busId: populatedTrip.busId ? populatedTrip.busId._id.toString() : ''
+            });
         } catch (e) {
             logger.warn('Socket not active for trip end');
         }
