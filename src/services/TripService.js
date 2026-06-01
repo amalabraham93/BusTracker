@@ -99,7 +99,12 @@ class TripService {
 
         // 3. Broadcast to Socket Room
         try {
-            getIo().to(`trip:${tripId}`).emit('locationUpdate', { lat, lng, tripId });
+            getIo().to(`trip:${tripId}`).emit('locationUpdate', { 
+                driverId, 
+                lat: Number(lat), 
+                lng: Number(lng), 
+                tripId 
+            });
         } catch (e) {
             // Socket might fail if not init
         }
