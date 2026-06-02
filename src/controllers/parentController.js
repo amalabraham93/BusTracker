@@ -20,11 +20,34 @@ exports.getChildren = catchAsync(async (req, res, next) => {
     }
 
     const children = await StudentRepository.findByParentPhone(phone);
+    const TripRepository = require('../repositories/TripRepository');
+
+    const childrenWithTripInfo = await Promise.all(children.map(async (child) => {
+        let tripStatus = 'pending';
+        let tripId = '';
+
+        if (child.assignedRoute && child.assignedBus) {
+            const routeId = child.assignedRoute._id || child.assignedRoute;
+            const busId = child.assignedBus._id || child.assignedBus;
+            
+            const trip = await TripRepository.findActiveTripByRouteAndBus(routeId, busId);
+            if (trip) {
+                tripStatus = 'ongoing';
+                tripId = trip._id;
+            }
+        }
+
+        const childObj = child.toObject();
+        childObj.tripStatus = tripStatus;
+        childObj.tripId = tripId;
+        
+        return childObj;
+    }));
 
     res.status(200).json({
         status: 'success',
-        results: children.length,
-        data: { children }
+        results: childrenWithTripInfo.length,
+        data: { children: childrenWithTripInfo }
     });
 });
 

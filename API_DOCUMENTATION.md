@@ -279,6 +279,7 @@ Connect to `socket.io` server for instant updates.
 - **`routeAlert`**: Data: `{ type, message, timestamp }` (Sent to room `trip:ID`)
 - **`emergencyAlert`**: Data: `{ driverName, driverPhone, busId, tripId, message, timestamp }`
 - **`locationUpdate`**: Data: `{ driverId, lat, lng, tripId }` (Sent to room `trip:ID`)
+- **`attendanceMarked`**: Data: `{ status, studentId, name, tripId }` (Sent to room `trip:ID`. `status` is one of `Boarded`, `Dropped`, `Absent`)
 
 ---
 

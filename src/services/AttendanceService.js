@@ -36,6 +36,18 @@ class AttendanceService {
                 'Attendance Update',
                 message
             );
+
+            try {
+                const { getIo } = require('../sockets/socketHandler');
+                getIo().to(`trip:${tripId}`).emit('attendanceMarked', {
+                    status,
+                    studentId,
+                    name: student.name,
+                    tripId
+                });
+            } catch (e) {
+                // Ignore if socket isn't initialized
+            }
         }
 
         return attendance;
