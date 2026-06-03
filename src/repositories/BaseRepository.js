@@ -72,7 +72,7 @@ class BaseRepository {
     }
 
     async update(id, data) {
-        return await this.model.findByIdAndUpdate(id, data, { new: true, runValidators: true });
+        return await this.model.findByIdAndUpdate(id, data, { returnDocument: 'after', runValidators: true });
     }
 
     async delete(id) {

@@ -16,7 +16,7 @@ class DriverRepository extends BaseRepository {
                 type: 'Point',
                 coordinates: [lng, lat]
             }
-        }, { new: true });
+        }, { returnDocument: 'after' });
     }
 }
 

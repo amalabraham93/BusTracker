@@ -53,7 +53,7 @@ class AuthService {
         await PhoneAuth.findOneAndUpdate(
             { phone, role },
             { otp, expiresAt },
-            { upsert: true, new: true }
+            { upsert: true, returnDocument: 'after' }
         );
 
         // 4. Mock SMS Send
