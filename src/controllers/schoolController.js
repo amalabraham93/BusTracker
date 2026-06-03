@@ -421,6 +421,7 @@ exports.getStudentAttendance = catchAsync(async (req, res, next) => {
     }
 
     const student = await StudentRepository.model.findOne({ _id: id, schoolId: schoolId })
+        .populate('schoolId', 'name address phone email')
         .populate('assignedRoute', 'routeName startPoint endPoint')
         .populate('assignedBus', 'busNumber capacity');
 
