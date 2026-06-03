@@ -95,13 +95,35 @@ exports.verifyOtp = catchAsync(async (req, res, next) => {
     AuthService.createSendToken(user, role, 200, res);
 });
 
-exports.logout = (req, res) => {
-    // For standard stateless JWT, logout is usually just client-side token clearing.
+exports.logout = catchAsync(async (req, res, next) => {
+    let token;
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+        token = req.headers.authorization.split(' ')[1];
+    }
+
+    if (token) {
+        const { client: redisClient } = require('../config/redis');
+        const jwt = require('jsonwebtoken');
+        
+        try {
+            // Decode the token to get expiration time
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            const expTime = decoded.exp - Math.floor(Date.now() / 1000);
+            
+            if (expTime > 0) {
+                // Add token to Redis blacklist for the remaining validity duration
+                await redisClient.set(`blacklist:${token}`, 'true', { EX: expTime });
+            }
+        } catch (e) {
+            // Ignore if token is already expired or invalid
+        }
+    }
+
     res.status(200).json({
         status: 'success',
         message: 'Logged out successfully!'
     });
-};
+});
 
 exports.changePassword = catchAsync(async (req, res, next) => {
     const { currentPassword, newPassword } = req.body;

@@ -16,6 +16,13 @@ exports.protect = catchAsync(async (req, res, next) => {
         return next(new AppError('You are not logged in! Please log in to get access.', 401));
     }
 
+    // 1.5) Check if token is blacklisted (logged out)
+    const { client: redisClient } = require('../config/redis');
+    const isBlacklisted = await redisClient.get(`blacklist:${token}`);
+    if (isBlacklisted) {
+        return next(new AppError('Your session has expired. Please log in again.', 401));
+    }
+
     // 2) Verification token
     const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
 
