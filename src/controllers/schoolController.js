@@ -288,6 +288,92 @@ exports.getStudents = catchAsync(async (req, res, next) => {
     res.status(200).json({ status: 'success', ...result });
 });
 
+exports.getClassesAndSections = catchAsync(async (req, res, next) => {
+    const schoolId = req.user.id;
+    const mongoose = require('mongoose');
+
+    const classes = await StudentRepository.model.aggregate([
+        { $match: { schoolId: new mongoose.Types.ObjectId(schoolId), isActive: true } },
+        { 
+            $group: { 
+                _id: "$classGrade", 
+                sections: { $addToSet: "$section" } 
+            } 
+        },
+        { $sort: { _id: 1 } }
+    ]);
+
+    const formattedClasses = classes.map(c => ({
+        classGrade: c._id,
+        sections: c.sections.sort()
+    }));
+
+    res.status(200).json({
+        status: 'success',
+        data: { classes: formattedClasses }
+    });
+});
+
+exports.getStudentsAttendance = catchAsync(async (req, res, next) => {
+    const { page, limit, search, classGrade, section, date } = req.query;
+    const schoolId = req.user.id;
+
+    const filter = { schoolId, isActive: true };
+    if (classGrade) filter.classGrade = classGrade;
+    if (section) filter.section = section;
+
+    // 1. Fetch paginated students
+    const result = await StudentRepository.findPaged({
+        page,
+        limit,
+        search,
+        searchFields: ['name', 'studentRollId'],
+        filter,
+        populate: 'assignedBus assignedRoute'
+    });
+
+    // 2. Fetch Attendance for the queried date
+    const AttendanceRepository = require('../repositories/AttendanceRepository');
+    
+    let queryDate = new Date();
+    if (date) {
+        queryDate = new Date(date);
+    }
+    const startOfDay = new Date(queryDate);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(queryDate);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const studentIds = result.data.map(s => s._id);
+    
+    const attendances = await AttendanceRepository.model.find({
+        studentId: { $in: studentIds },
+        date: { $gte: startOfDay, $lte: endOfDay }
+    });
+
+    // 3. Map attendance back to students
+    const studentsWithAttendance = result.data.map(student => {
+        const studentObj = student.toObject ? student.toObject() : student;
+        const studentAttendance = attendances.filter(a => a.studentId.toString() === student._id.toString());
+        
+        studentAttendance.sort((a, b) => b.date - a.date);
+        
+        const latestStatus = studentAttendance.length > 0 ? studentAttendance[0].status : 'Pending';
+        const latestTime = studentAttendance.length > 0 ? studentAttendance[0].date : null;
+
+        studentObj.attendanceStatus = latestStatus;
+        studentObj.attendanceTime = latestTime;
+        
+        return studentObj;
+    });
+
+    res.status(200).json({
+        status: 'success',
+        pagination: result.pagination,
+        data: { students: studentsWithAttendance }
+    });
+});
+
 exports.createStudent = catchAsync(async (req, res, next) => {
     const { assignedRoute, assignedBus } = req.body;
 

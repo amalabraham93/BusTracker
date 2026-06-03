@@ -141,7 +141,11 @@ Admins can manage any resource in the system. All actions are **Logged** in the 
 
 ### 1. Dashboard & Reports
 - **Dashboard**: `GET /school/dashboard`
-- **Attendance**: `GET /school/attendance`
+- **Classes & Sections**: `GET /school/classes` (Returns a unique list of classGrades and their available sections for dropdowns/filters)
+- **Attendance Summary**: `GET /school/attendance` (Returns an aggregate count of today's attendance statuses)
+- **Advanced Student Attendance List**: `GET /school/attendance/students` 
+  - **Query Params**: `page` (default 1), `limit` (default 10), `search` (name, rollId), `classGrade`, `section`, `date` (YYYY-MM-DD, defaults to today)
+  - **Description**: Returns paginated students matching filters, and augments each student object with `attendanceStatus` (`Boarded`, `Dropped`, `Absent`, `Pending`) and `attendanceTime` for the requested date.
 - **Live Tracking (Drivers)**: `GET /school/live-tracking`
 - **Active Trips (Map/List View)**: `GET /school/active-trips` (Returns all ongoing trips with real-time driver coordinates, bus, and route details)
 
