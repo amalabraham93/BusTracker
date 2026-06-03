@@ -141,11 +141,7 @@ Admins can manage any resource in the system. All actions are **Logged** in the 
 
 ### 1. Dashboard & Reports
 - **Dashboard**: `GET /school/dashboard`
-- **Classes & Sections**: `GET /school/classes` (Returns a unique list of classGrades and their available sections for dropdowns/filters)
-- **Attendance Summary**: `GET /school/attendance` (Returns an aggregate count of today's attendance statuses)
-- **Advanced Student Attendance List**: `GET /school/attendance/students` 
-  - **Query Params**: `page` (default 1), `limit` (default 10), `search` (name, rollId), `classGrade`, `section`, `date` (YYYY-MM-DD, defaults to today)
-  - **Description**: Returns paginated students matching filters, and augments each student object with `attendanceStatus` (`Boarded`, `Dropped`, `Absent`, `Pending`) and `attendanceTime` for the requested date.
+- **Attendance**: `GET /school/attendance`
 - **Live Tracking (Drivers)**: `GET /school/live-tracking`
 - **Active Trips (Map/List View)**: `GET /school/active-trips` (Returns all ongoing trips with real-time driver coordinates, bus, and route details)
 
@@ -183,7 +179,10 @@ Manage resources **strictly for your own school**. All actions are **Logged**.
 - **Note**: Stops are currently optional and not required for core route definition.
 
 #### 🎓 Students
-- **Endpoints**: `GET/POST/PATCH/DELETE /school/students`
+- **Endpoints**: 
+    - `GET/POST/PATCH/DELETE /school/students` (Paginated list)
+    - `GET /school/students/filter?classGrade=10&section=A` (Unpaginated list, filterable by class and section)
+    - `GET /school/students/:id/attendance?month=YYYY-MM` (View monthly attendance for a specific student)
 - **Fields (List)**:
     - `name`: Student Name.
     - `classGrade`: Class.

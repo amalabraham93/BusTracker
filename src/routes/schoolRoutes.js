@@ -43,6 +43,7 @@ router.delete('/drivers/:id', schoolController.deleteDriver);
 
 // --- STUDENT MANAGEMENT ---
 router.get('/students', schoolController.getStudents);
+router.get('/students/filter', schoolController.getStudentsList);
 router.post('/students', [
     body('name').exists().withMessage('Student name is required'),
     body('studentRollId').exists().withMessage('Student Roll ID is required'),
@@ -54,13 +55,12 @@ router.post('/students', [
 ], schoolController.createStudent);
 router.patch('/students/:id', schoolController.updateStudent);
 router.delete('/students/:id', schoolController.deleteStudent);
+router.get('/students/:id/attendance', schoolController.getStudentAttendance);
 
 // --- DASHBOARD & REPORTS ---
 router.get('/dashboard', schoolController.getDashboardStats);
 router.get('/attendance', schoolController.getAttendance);
-router.get('/attendance/students', schoolController.getStudentsAttendance);
 router.get('/live-tracking', schoolController.getLiveTracking);
 router.get('/active-trips', schoolController.getActiveTrips);
-router.get('/classes', schoolController.getClassesAndSections);
 
 module.exports = router;
