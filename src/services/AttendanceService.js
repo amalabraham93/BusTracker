@@ -32,6 +32,7 @@ class AttendanceService {
             if (status === 'Absent') message = `${student.name} is marked absent.`;
 
             await NotificationService.sendPushNotification(
+                'parent',
                 student.parentPhone,
                 'Attendance Update',
                 message

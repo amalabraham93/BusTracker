@@ -3,7 +3,7 @@ const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/AppError');
 
 exports.login = catchAsync(async (req, res, next) => {
-    const { role } = req.body;
+    const { role, fcmToken } = req.body;
 
     if (!role) {
         return next(new AppError('Please select a role', 400));
@@ -59,6 +59,11 @@ exports.login = catchAsync(async (req, res, next) => {
         return next(new AppError('Invalid role selected', 400));
     }
 
+    if (fcmToken) {
+        const { client: redisClient } = require('../config/redis');
+        await redisClient.sAdd(`fcm:${role}:${user._id}`, fcmToken);
+    }
+
     AuthService.createSendToken(user, role, 200, res);
 });
 
@@ -84,7 +89,7 @@ exports.requestOtp = catchAsync(async (req, res, next) => {
 });
 
 exports.verifyOtp = catchAsync(async (req, res, next) => {
-    const { phone, role, otp } = req.body;
+    const { phone, role, otp, fcmToken } = req.body;
 
     if (!phone || !role || !otp) {
         return next(new AppError('Please provide phone, role, and OTP', 400));
@@ -92,10 +97,16 @@ exports.verifyOtp = catchAsync(async (req, res, next) => {
 
     const user = await AuthService.verifyOtp(phone, role, otp);
 
+    if (fcmToken) {
+        const { client: redisClient } = require('../config/redis');
+        await redisClient.sAdd(`fcm:${role}:${user._id}`, fcmToken);
+    }
+
     AuthService.createSendToken(user, role, 200, res);
 });
 
 exports.logout = catchAsync(async (req, res, next) => {
+    const { fcmToken } = req.body;
     let token;
     if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
         token = req.headers.authorization.split(' ')[1];
@@ -113,6 +124,11 @@ exports.logout = catchAsync(async (req, res, next) => {
             if (expTime > 0) {
                 // Add token to Redis blacklist for the remaining validity duration
                 await redisClient.set(`blacklist:${token}`, 'true', { EX: expTime });
+            }
+            
+            // Remove the FCM token if provided
+            if (fcmToken) {
+                await redisClient.sRem(`fcm:${decoded.role}:${decoded.id}`, fcmToken);
             }
         } catch (e) {
             // Ignore if token is already expired or invalid

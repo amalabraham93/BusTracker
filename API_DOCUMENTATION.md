@@ -50,7 +50,8 @@ Submit the code to receive a JWT token.
   {
     "phone": "9876543210",
     "role": "driver",
-    "otp": "1234"
+    "otp": "1234",
+    "fcmToken": "optional_device_token"
   }
   ```
 
@@ -83,14 +84,21 @@ A single endpoint handles initial login.
   {
     "role": "driver", // or "parent"
     "phone": "9876543210",
-    "otp": "1234"
+    "otp": "1234",
+    "fcmToken": "optional_device_token" // Works for all login types
   }
   ```
 
 ### Logout
-Invalidate the current session (client should also clear the token).
+Invalidate the current session (client should also clear the token). Unregisters the FCM token.
 - **Endpoint**: `/auth/logout`
 - **Method**: `POST`
+- **Body**:
+  ```json
+  {
+    "fcmToken": "your_device_token_here"
+  }
+  ```
 
 ---
 
@@ -344,3 +352,15 @@ All LIST APIs support the following parameters:
 - **`isActive`**: Filter by active/inactive status (`true`/`false`).
 
 ---
+
+
+
+
+
+
+
+
+
+
+
+
