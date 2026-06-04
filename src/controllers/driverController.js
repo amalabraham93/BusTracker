@@ -244,7 +244,17 @@ exports.sendEmergencyAlert = catchAsync(async (req, res, next) => {
     await NotificationService.sendRealTimeAlert(`school:${schoolId}`, 'emergencyAlert', emergencyData);
 
     // 1.5 Emit Firebase Push Notification to School
-    await NotificationService.sendPushNotification('school', schoolId.toString(), 'Emergency Alert', emergencyData.message, { type: 'Emergency' });
+    const schoolMsg = `SOS - Alert from ${emergencyData.routeName || 'Unknown Route'} and ${emergencyData.busNumber || 'Unknown Bus'}`;
+    await NotificationService.sendPushNotification('school', schoolId.toString(), 'Emergency Alert', schoolMsg, { type: 'Emergency' });
+
+    // 1.6 Emit Firebase Push Notification to Parents on this Route
+    const StudentRepository = require('../repositories/StudentRepository');
+    const students = await StudentRepository.model.find({ assignedRoute: trip.routeId, assignedBus: trip.busId, isActive: true });
+    const parentPhones = [...new Set(students.map(s => s.parentPhone))];
+    const parentMsg = "Alert - driver message and don't panic";
+    for (const phone of parentPhones) {
+        await NotificationService.sendPushNotification('parent', phone, 'Emergency Alert', parentMsg, { type: 'Emergency' });
+    }
 
     // 2. Log Action
     await AuditLogRepository.logAction({

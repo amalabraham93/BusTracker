@@ -46,7 +46,15 @@ class TripService {
             logger.warn('Socket not active for trip start');
         }
 
-        // Ideally fetch parents and send Push Notifications here
+        // Fetch parents and send Push Notifications
+        const students = await StudentRepository.model.find({ assignedRoute: trip.routeId, assignedBus: trip.busId, isActive: true });
+        const parentPhones = [...new Set(students.map(s => s.parentPhone))];
+        const title = 'Trip Started';
+        const message = `The ${type.toLowerCase()} trip has started.`;
+        for (const phone of parentPhones) {
+            await NotificationService.sendPushNotification('parent', phone, title, message, { type });
+        }
+        
         return trip;
     }
 
@@ -89,15 +97,22 @@ class TripService {
             logger.warn('Socket not active for trip end');
         }
 
-        // Fetch students on this trip's route to notify parents
-        const students = await StudentRepository.model.find({ assignedRoute: trip.routeId });
-        for (const student of students) {
-            if (student.parentPhone) {
-                await NotificationService.sendPushNotification(
-                    student.parentPhone,
-                    'Trip Ended',
-                    `The bus trip (${trip.type}) has safely ended.`
-                );
+        // Notify parents of boarded students on Pickup trips
+        if (trip.type === 'Pickup') {
+            const AttendanceRepository = require('../repositories/AttendanceRepository');
+            const boardedAttendances = await AttendanceRepository.model.find({ tripId: trip._id, status: 'Boarded' }).populate('studentId');
+            const parentPhones = [...new Set(boardedAttendances.map(a => a.studentId.parentPhone))];
+            
+            for (const phone of parentPhones) {
+                if (phone) {
+                    await NotificationService.sendPushNotification(
+                        'parent',
+                        phone,
+                        'Trip Ended',
+                        'Your student reached school safely.',
+                        { type: 'Pickup' }
+                    );
+                }
             }
         }
 

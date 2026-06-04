@@ -27,9 +27,9 @@ class AttendanceService {
         const student = await StudentRepository.findById(studentId);
         if (student) {
             let message = '';
-            if (status === 'Boarded') message = `${student.name} has boarded the bus.`;
-            if (status === 'Dropped') message = `${student.name} has been dropped off.`;
-            if (status === 'Absent') message = `${student.name} is marked absent.`;
+            if (status === 'Boarded') message = `Your student ${student.name} marked as boarded.`;
+            if (status === 'Dropped') message = `Your student ${student.name} marked as dropped.`;
+            if (status === 'Absent') message = `Your student ${student.name} marked as absent.`;
 
             await NotificationService.sendPushNotification(
                 'parent',
