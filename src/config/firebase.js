@@ -4,8 +4,16 @@ const logger = require('../utils/logger');
 
 let serviceAccount;
 try {
-    const serviceAccountPath = 'C:\\Amal\\BusTracker\\track-school-bus-2026-firebase-adminsdk-fbsvc-1685114653.json';
-    serviceAccount = require(serviceAccountPath);
+    if (process.env.FIREBASE_CREDENTIALS) {
+        // 1. Production Mode: Read from Environment Variable
+        serviceAccount = JSON.parse(process.env.FIREBASE_CREDENTIALS);
+        logger.info('Firebase credentials loaded from environment variable.');
+    } else {
+        // 2. Local Development Mode: Read from ignored file
+        const serviceAccountPath = 'C:\\Amal\\BusTracker\\track-school-bus-2026-firebase-adminsdk-fbsvc-1685114653.json';
+        serviceAccount = require(serviceAccountPath);
+        logger.info('Firebase credentials loaded from local JSON file.');
+    }
 } catch (error) {
     logger.error('Firebase Service Account Key not found. Push notifications will not work.');
 }

@@ -40,3 +40,6 @@ pids
 *.njsproj
 *.sln
 *.sw?
+
+# Firebase Secret
+track-school-bus-2026-firebase-adminsdk-fbsvc-1685114653.json
