@@ -58,6 +58,10 @@ const StudentSchema = new mongoose.Schema({
         coordinates: {
             type: [Number], // [longitude, latitude]
             default: [0, 0] // Default to 0,0 if not provided
+        },
+        name: {
+            type: String,
+            trim: true
         }
     },
     isActive: {

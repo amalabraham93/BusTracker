@@ -330,6 +330,9 @@ exports.createStudent = catchAsync(async (req, res, next) => {
             type: 'Point',
             coordinates: [parseFloat(req.body.lng), parseFloat(req.body.lat)]
         };
+        if (req.body.locationName) {
+            data.pickupLocation.name = req.body.locationName;
+        }
     }
 
     let student = await StudentRepository.create(data);
@@ -378,6 +381,9 @@ exports.updateStudent = catchAsync(async (req, res, next) => {
             type: 'Point',
             coordinates: [parseFloat(req.body.lng), parseFloat(req.body.lat)]
         };
+        if (req.body.locationName) {
+            updateData.pickupLocation.name = req.body.locationName;
+        }
     }
 
     let updatedStudent = await StudentRepository.update(req.params.id, updateData);

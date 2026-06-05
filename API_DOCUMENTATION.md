@@ -200,11 +200,11 @@ Manage resources **strictly for your own school**. All actions are **Logged**.
     - `assignedBus`: Bus (Populated).
     - `parentEmail`, `parentPassword`: Parent Credentials.
     - `studentRollId`: Roll No.
-- **Fields (Add/Update)**: `name`, `classGrade`, `section`, `parentPhone`, `assignedRoute`, `assignedBus`, `parentEmail`, `studentRollId`, `lat`, `lng`
+- **Fields (Add/Update)**: `name`, `classGrade`, `section`, `parentPhone`, `assignedRoute`, `assignedBus`, `parentEmail`, `studentRollId`, `lat`, `lng`, `locationName`
 - **Validation Constraints**: 
     - `assignedRoute` (if provided) must exist and belong to the school.
     - `assignedBus` (if provided) must exist, belong to the school, and be assigned to the student's `assignedRoute`.
-    - `lat`, `lng` (if provided) are parsed into a GeoJSON `pickupLocation` for 1km geofencing proximity alerts.
+    - `lat`, `lng`, `locationName` (if provided) are parsed into a GeoJSON `pickupLocation` for 1km geofencing proximity alerts.
 - **Searchable Fields**: `name`, `studentRollId`, `parentPhone`, `parentEmail`
 
 #### Common Query Params for LIST APIs:
