@@ -142,7 +142,7 @@ class TripService {
             // Socket might fail if not init
         }
 
-        // 4. Proximity Check (2KM)
+        // 4. Proximity Check (1KM)
         // Optimization: Use Redis to store "notified" state for students per trip
         // Key: trip:{tripId}:student:{studentId}:notified
 
@@ -150,7 +150,7 @@ class TripService {
         // To exclude notified, we'd need to fetch all notified keys... might be expensive.
         // Better: Fetch nearby students from DB, then check Redis for each.
 
-        const nearbyStudents = await StudentRepository.findNearbyStudents(lat, lng, 2);
+        const nearbyStudents = await StudentRepository.findNearbyStudents(lat, lng, 1);
 
         for (const student of nearbyStudents) {
             // Check if already notified
@@ -160,9 +160,11 @@ class TripService {
             if (!isNotified) {
                 // Send Notification
                 await NotificationService.sendPushNotification(
+                    'parent',
                     student.parentPhone,
                     'Bus Nearby',
-                    `The bus is within 2km of pickup.`
+                    `The bus is within 1km of your pickup location.`,
+                    { type: 'Proximity' }
                 );
 
                 // Mark as notified (expire in 12 hours)

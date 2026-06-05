@@ -324,6 +324,14 @@ exports.createStudent = catchAsync(async (req, res, next) => {
     }
 
     const data = { ...req.body, schoolId: req.user.id };
+    
+    if (req.body.lat !== undefined && req.body.lng !== undefined) {
+        data.pickupLocation = {
+            type: 'Point',
+            coordinates: [parseFloat(req.body.lng), parseFloat(req.body.lat)]
+        };
+    }
+
     let student = await StudentRepository.create(data);
     student = await student.populate('assignedBus assignedRoute');
     
@@ -364,6 +372,13 @@ exports.updateStudent = catchAsync(async (req, res, next) => {
     }
 
     const updateData = { ...req.body };
+
+    if (req.body.lat !== undefined && req.body.lng !== undefined) {
+        updateData.pickupLocation = {
+            type: 'Point',
+            coordinates: [parseFloat(req.body.lng), parseFloat(req.body.lat)]
+        };
+    }
 
     let updatedStudent = await StudentRepository.update(req.params.id, updateData);
     updatedStudent = await updatedStudent.populate('assignedBus assignedRoute');
