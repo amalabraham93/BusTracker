@@ -8,7 +8,7 @@ class StudentRepository extends BaseRepository {
 
     async findByParentPhone(phone) {
         return await this.model.find({ parentPhone: phone })
-            .populate('schoolId', 'name address')
+            .populate('schoolId', 'name email address phone')
             .populate('assignedBus', 'busNumber busId capacity')
             .populate('assignedRoute', 'routeName startPoint endPoint');
     }

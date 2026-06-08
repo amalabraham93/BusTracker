@@ -74,7 +74,8 @@ exports.getDashboard = catchAsync(async (req, res, next) => {
         .populate({
             path: 'assignedBus',
             populate: { path: 'assignedRoute' } 
-        });
+        })
+        .populate('schoolId', 'name email address phone');
 
     if (!driver) {
         return next(new AppError('Driver not found', 404));

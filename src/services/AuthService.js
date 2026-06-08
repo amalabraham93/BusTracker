@@ -82,12 +82,12 @@ class AuthService {
         // 3. Fetch User and Clear OTP
         let user;
         if (role === 'driver') {
-            user = await DriverRepository.findByPhone(phone);
+            user = await DriverRepository.model.findOne({ phone }).populate('schoolId', 'name email address phone');
         } else if (role === 'parent') {
             // Check if phone exists in student records
-            const student = await StudentRepository.findOne({ parentPhone: phone });
+            const student = await StudentRepository.model.findOne({ parentPhone: phone }).populate('schoolId', 'name email address phone');
             if (!student) throw new AppError('Parent record no longer exists', 404);
-            user = { _id: phone, phone, email: student.parentEmail, role: 'parent' };
+            user = { _id: phone, phone, email: student.parentEmail, role: 'parent', schoolId: student.schoolId };
         }
 
         await PhoneAuth.deleteOne({ _id: auth._id });
@@ -105,7 +105,7 @@ class AuthService {
     }
 
     async loginDriverEmail(email, password) {
-        const driver = await DriverRepository.model.findOne({ email }).select('+password');
+        const driver = await DriverRepository.model.findOne({ email }).select('+password').populate('schoolId', 'name email address phone');
         if (!driver || driver.password !== password) {
             throw new AppError('Incorrect email or password', 400);
         }
@@ -113,11 +113,11 @@ class AuthService {
     }
 
     async loginParentEmail(email, password) {
-        const student = await StudentRepository.model.findOne({ parentEmail: email }).select('+parentPassword');
+        const student = await StudentRepository.model.findOne({ parentEmail: email }).select('+parentPassword').populate('schoolId', 'name email address phone');
         if (!student || student.parentPassword !== password) {
             throw new AppError('Incorrect email or password', 400);
         }
-        return { _id: student.parentPhone, phone: student.parentPhone, email: email, role: 'parent' };
+        return { _id: student.parentPhone, phone: student.parentPhone, email: email, role: 'parent', schoolId: student.schoolId };
     }
 
     // Deprecated in favor of new verifyOtp flow but keeping for compatibility if needed
