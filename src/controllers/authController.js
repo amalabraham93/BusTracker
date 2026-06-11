@@ -119,11 +119,16 @@ exports.logout = catchAsync(async (req, res, next) => {
         try {
             // Decode the token to get expiration time
             const decoded = jwt.verify(token, process.env.JWT_SECRET);
-            const expTime = decoded.exp - Math.floor(Date.now() / 1000);
             
-            if (expTime > 0) {
-                // Add token to Redis blacklist for the remaining validity duration
-                await redisClient.set(`blacklist:${token}`, 'true', { EX: expTime });
+            if (decoded.exp) {
+                const expTime = decoded.exp - Math.floor(Date.now() / 1000);
+                if (expTime > 0) {
+                    // Add token to Redis blacklist for the remaining validity duration
+                    await redisClient.set(`blacklist:${token}`, 'true', { EX: expTime });
+                }
+            } else {
+                // Token never expires natively, so we blacklist it for 1 year
+                await redisClient.set(`blacklist:${token}`, 'true', { EX: 31536000 });
             }
             
             // Remove the FCM token if provided

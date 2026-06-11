@@ -142,33 +142,38 @@ class TripService {
             // Socket might fail if not init
         }
 
-        // 4. Proximity Check (1KM)
-        // Optimization: Use Redis to store "notified" state for students per trip
-        // Key: trip:{tripId}:student:{studentId}:notified
+        // 4. Proximity Checks (2KM and 500m)
+        // Optimization: Use Redis to store "notified" state for students per trip for each distance tier
 
-        // Find nearby students (who haven't been notified yet?)
-        // To exclude notified, we'd need to fetch all notified keys... might be expensive.
-        // Better: Fetch nearby students from DB, then check Redis for each.
-
-        const nearbyStudents = await StudentRepository.findNearbyStudents(lat, lng, 1);
-
-        for (const student of nearbyStudents) {
-            // Check if already notified
-            const key = `trip:${tripId}:student:${student._id}:notified`;
-            const isNotified = await redisClient.get(key);
-
-            if (!isNotified) {
-                // Send Notification
+        // 2km Check
+        const students2km = await StudentRepository.findNearbyStudents(lat, lng, 2);
+        for (const student of students2km) {
+            const key2km = `trip:${tripId}:student:${student._id}:notified:2km`;
+            if (!await redisClient.get(key2km)) {
                 await NotificationService.sendPushNotification(
                     'parent',
                     student.parentPhone,
                     'Bus Nearby',
-                    `The bus is within 1km of your pickup location.`,
+                    `The bus is within 2km of your pickup location.`,
                     { type: 'Proximity' }
                 );
+                await redisClient.set(key2km, 'true', { EX: 43200 });
+            }
+        }
 
-                // Mark as notified (expire in 12 hours)
-                await redisClient.set(key, 'true', { EX: 43200 });
+        // 500m Check
+        const students500m = await StudentRepository.findNearbyStudents(lat, lng, 0.5);
+        for (const student of students500m) {
+            const key500m = `trip:${tripId}:student:${student._id}:notified:500m`;
+            if (!await redisClient.get(key500m)) {
+                await NotificationService.sendPushNotification(
+                    'parent',
+                    student.parentPhone,
+                    'Bus Arriving Soon',
+                    `The bus is within 500m of your pickup location.`,
+                    { type: 'Proximity' }
+                );
+                await redisClient.set(key500m, 'true', { EX: 43200 });
             }
         }
     }
