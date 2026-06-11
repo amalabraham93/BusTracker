@@ -6,42 +6,16 @@ const RouteSchema = new mongoose.Schema({
         required: true
     },
     stops: [{
-        stopName: String,
-        location: {
-            type: {
-                type: String,
-                enum: ['Point'],
-                default: 'Point'
-            },
-            coordinates: {
-                type: [Number], // [longitude, latitude]
-                required: true
-            }
-        }
+        type: String,
+        trim: true
     }],
     startPoint: {
-        type: {
-            type: String,
-            enum: ['Point'],
-            default: 'Point'
-        },
-        coordinates: {
-            type: [Number], // [longitude, latitude]
-            default: [0, 0]
-        },
-        name: String
+        type: String,
+        trim: true
     },
     endPoint: {
-        type: {
-            type: String,
-            enum: ['Point'],
-            default: 'Point'
-        },
-        coordinates: {
-            type: [Number], // [longitude, latitude]
-            default: [0, 0]
-        },
-        name: String
+        type: String,
+        trim: true
     },
     schoolId: {
         type: mongoose.Schema.Types.ObjectId,

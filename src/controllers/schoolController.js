@@ -197,8 +197,25 @@ exports.getRoutes = catchAsync(async (req, res, next) => {
     res.status(200).json({ status: 'success', ...result });
 });
 
+const extractName = (val) => {
+    if (!val) return '';
+    if (typeof val === 'string') return val;
+    return val.name || val.stopName || '';
+};
+
+const mapRoutePayload = (body) => {
+    const data = { ...body };
+    if (data.startPoint) data.startPoint = extractName(data.startPoint);
+    if (data.endPoint) data.endPoint = extractName(data.endPoint);
+    if (data.stops && Array.isArray(data.stops)) {
+        data.stops = data.stops.map(extractName).filter(Boolean);
+    }
+    return data;
+};
+
 exports.createRoute = catchAsync(async (req, res, next) => {
-    const data = { ...req.body, schoolId: req.user.id };
+    const data = mapRoutePayload(req.body);
+    data.schoolId = req.user.id;
     const route = await RouteRepository.create(data);
     
     await AuditLogRepository.logAction({
@@ -220,14 +237,15 @@ exports.updateRoute = catchAsync(async (req, res, next) => {
     const route = await RouteRepository.findOne({ _id: req.params.id, schoolId: req.user.id });
     if (!route) return next(new AppError('Route not found or access denied', 404));
 
-    const updatedRoute = await RouteRepository.update(req.params.id, req.body);
+    const data = mapRoutePayload(req.body);
+    const updatedRoute = await RouteRepository.update(req.params.id, data);
     await AuditLogRepository.logAction({
         userId: req.user.id,
         userRole: 'school',
         action: 'UPDATE',
         resource: 'Route',
         resourceId: route._id,
-        details: req.body
+        details: data
     });
     res.status(200).json({ 
         status: 'success', 

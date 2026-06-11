@@ -179,12 +179,12 @@ Manage resources **strictly for your own school**. All actions are **Logged**.
 - **Endpoints**: 
     - `GET/POST/PATCH/DELETE /school/routes`
     - `GET /school/routes/:routeId/buses` (Retrieve all buses assigned to this route)
-- **Fields (List)**: `routeName`, `startPoint`, `endPoint`
-- **Fields (Add)**:
+- **Fields (List)**: `routeName`, `startPoint`, `endPoint`, `stops`
+- **Fields (Add/Update)**:
     - `routeName`: Name of the route.
-    - `startPoint`: `{ "type": "Point", "coordinates": [lng, lat], "name": "Start Name" }`
-    - `endPoint`: `{ "type": "Point", "coordinates": [lng, lat], "name": "End Name" }`
-- **Note**: Stops are currently optional and not required for core route definition.
+    - `startPoint`: Name of the starting location (String).
+    - `endPoint`: Name of the ending location (String).
+    - `stops`: Array of intermediate stop names (Array of Strings).
 
 #### 🎓 Students
 - **Endpoints**: 
