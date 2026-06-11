@@ -16,21 +16,40 @@ class NotificationService {
                 return false;
             }
 
+            const isProximity = data.type === 'Proximity' || data.type === 'Emergency';
+
+            // Firebase strictly requires string values in data
+            const stringifiedData = typeof data === 'object' ? JSON.parse(JSON.stringify(data)) : {};
+            for (let key in stringifiedData) {
+                if (typeof stringifiedData[key] !== 'string') {
+                    stringifiedData[key] = String(stringifiedData[key]);
+                }
+            }
+            
+            // Set Category based on alert type
+            stringifiedData.category = isProximity ? 'alert' : 'notifications';
+
             const message = {
                 notification: {
                     title,
                     body
                 },
-                data: typeof data === 'object' ? JSON.parse(JSON.stringify(data)) : {}, // Firebase strictly requires string values in data
+                data: stringifiedData,
+                android: {
+                    notification: {
+                        channelId: isProximity ? 'alerts_channel' : 'notification',
+                        sound: isProximity ? 'bus_horn' : 'notification'
+                    }
+                },
+                apns: {
+                    payload: {
+                        aps: {
+                            sound: isProximity ? 'bus_horn.aiff' : 'notification.aiff'
+                        }
+                    }
+                },
                 tokens
             };
-
-            // Force values in data to be strings for FCM
-            for (let key in message.data) {
-                if (typeof message.data[key] !== 'string') {
-                    message.data[key] = String(message.data[key]);
-                }
-            }
 
             const response = await admin.messaging().sendEachForMulticast(message);
             
