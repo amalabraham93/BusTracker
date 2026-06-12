@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
 
 const StudentSchema = new mongoose.Schema({
     name: {
@@ -73,5 +74,26 @@ const StudentSchema = new mongoose.Schema({
 StudentSchema.index({ pickupLocation: '2dsphere' });
 // Compound index for finding students in a school/class
 StudentSchema.index({ schoolId: 1, classGrade: 1, section: 1 });
+
+// Pre-save hook to hash password
+StudentSchema.pre('save', async function(next) {
+    if (!this.isModified('parentPassword')) return next();
+    this.parentPassword = await bcrypt.hash(this.parentPassword, 12);
+    next();
+});
+
+// Pre-update hooks to hash password if updating directly
+const hashPasswordInUpdate = async function() {
+    const update = this.getUpdate();
+    if (update && update.parentPassword) {
+        if (!/^\$2[aby]\$\d{2}\$[./A-Za-z0-9]{53}$/.test(update.parentPassword)) {
+            update.parentPassword = await bcrypt.hash(update.parentPassword, 12);
+        }
+    }
+};
+
+StudentSchema.pre('findOneAndUpdate', hashPasswordInUpdate);
+StudentSchema.pre('updateMany', hashPasswordInUpdate);
+StudentSchema.pre('updateOne', hashPasswordInUpdate);
 
 module.exports = mongoose.model('Student', StudentSchema);

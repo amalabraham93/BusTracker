@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const SchoolRepository = require('../repositories/SchoolRepository');
 const DriverRepository = require('../repositories/DriverRepository');
@@ -8,6 +9,37 @@ const AppError = require('../utils/AppError');
 const logger = require('../utils/logger');
 
 class AuthService {
+    async compareAndMigratePassword(user, inputPassword, role) {
+        const passwordField = role === 'parent' ? 'parentPassword' : 'password';
+        const storedPassword = user[passwordField];
+
+        if (!storedPassword) return false;
+
+        const isHash = /^\$2[aby]\$\d{2}\$[./A-Za-z0-9]{53}$/.test(storedPassword);
+
+        if (isHash) {
+            return await bcrypt.compare(inputPassword, storedPassword);
+        } else {
+            // Legacy plain text check
+            if (storedPassword === inputPassword) {
+                // Migrate to hash immediately
+                const hashed = await bcrypt.hash(inputPassword, 12);
+                if (role === 'parent') {
+                    const StudentRepository = require('../repositories/StudentRepository');
+                    await StudentRepository.model.updateMany(
+                        { parentPhone: user.parentPhone },
+                        { parentPassword: hashed }
+                    );
+                } else {
+                    user[passwordField] = hashed;
+                    await user.constructor.updateOne({ _id: user._id }, { [passwordField]: hashed });
+                }
+                return true;
+            }
+            return false;
+        }
+    }
+
     signToken(id, role) {
         return jwt.sign({ id, role }, process.env.JWT_SECRET);
     }
@@ -96,7 +128,7 @@ class AuthService {
     async loginSchool(email, password, otp) {
         // ... (existing code, unchanged logic)
         const school = await SchoolRepository.model.findOne({ email }).select('+password +otp +otpExpires');
-        if (!school || school.password !== password) {
+        if (!school || !(await this.compareAndMigratePassword(school, password, 'school'))) {
             throw new AppError('Incorrect email or password', 400);
         }
         return school;
@@ -104,7 +136,7 @@ class AuthService {
 
     async loginDriverEmail(email, password) {
         const driver = await DriverRepository.model.findOne({ email }).select('+password').populate('schoolId', 'name email address phone');
-        if (!driver || driver.password !== password) {
+        if (!driver || !(await this.compareAndMigratePassword(driver, password, 'driver'))) {
             throw new AppError('Incorrect email or password', 400);
         }
         return driver;
@@ -112,7 +144,7 @@ class AuthService {
 
     async loginParentEmail(email, password) {
         const student = await StudentRepository.model.findOne({ parentEmail: email }).select('+parentPassword').populate('schoolId', 'name email address phone');
-        if (!student || student.parentPassword !== password) {
+        if (!student || !(await this.compareAndMigratePassword(student, password, 'parent'))) {
             throw new AppError('Incorrect email or password', 400);
         }
         return { _id: student.parentPhone, phone: student.parentPhone, email: email, role: 'parent', schoolId: student.schoolId };
@@ -130,26 +162,26 @@ class AuthService {
     async changePassword(userId, role, currentPassword, newPassword) {
         if (role === 'school') {
             const school = await SchoolRepository.model.findById(userId).select('+password');
-            if (!school || school.password !== currentPassword) {
+            if (!school || !(await this.compareAndMigratePassword(school, currentPassword, 'school'))) {
                 throw new AppError('Incorrect current password', 400);
             }
             school.password = newPassword;
-            await school.save();
+            await school.save(); // triggers pre-save hook
         } else if (role === 'driver') {
             const driver = await DriverRepository.model.findById(userId).select('+password');
-            if (!driver || driver.password !== currentPassword) {
+            if (!driver || !(await this.compareAndMigratePassword(driver, currentPassword, 'driver'))) {
                 throw new AppError('Incorrect current password', 400);
             }
             driver.password = newPassword;
-            await driver.save();
+            await driver.save(); // triggers pre-save hook
         } else if (role === 'parent') {
             const student = await StudentRepository.model.findOne({ parentPhone: userId }).select('+parentPassword');
-            if (!student || student.parentPassword !== currentPassword) {
+            if (!student || !(await this.compareAndMigratePassword(student, currentPassword, 'parent'))) {
                 throw new AppError('Incorrect current password', 400);
             }
             await StudentRepository.model.updateMany(
                 { parentPhone: userId },
-                { parentPassword: newPassword }
+                { parentPassword: newPassword } // triggers pre-updateMany hook
             );
         } else {
             throw new AppError('Password change not supported for this role', 400);

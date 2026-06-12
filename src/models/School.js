@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
 
 const SchoolSchema = new mongoose.Schema({
     name: {
@@ -53,5 +54,26 @@ const SchoolSchema = new mongoose.Schema({
 
 // Index for searching schools, though usually by ID or Email
 SchoolSchema.index({ name: 'text' });
+
+// Pre-save hook to hash password
+SchoolSchema.pre('save', async function(next) {
+    if (!this.isModified('password')) return next();
+    this.password = await bcrypt.hash(this.password, 12);
+    next();
+});
+
+// Pre-update hooks to hash password if updating directly
+const hashPasswordInUpdate = async function() {
+    const update = this.getUpdate();
+    if (update && update.password) {
+        if (!/^\$2[aby]\$\d{2}\$[./A-Za-z0-9]{53}$/.test(update.password)) {
+            update.password = await bcrypt.hash(update.password, 12);
+        }
+    }
+};
+
+SchoolSchema.pre('findOneAndUpdate', hashPasswordInUpdate);
+SchoolSchema.pre('updateMany', hashPasswordInUpdate);
+SchoolSchema.pre('updateOne', hashPasswordInUpdate);
 
 module.exports = mongoose.model('School', SchoolSchema);
