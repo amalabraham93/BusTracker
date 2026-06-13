@@ -56,10 +56,9 @@ const SchoolSchema = new mongoose.Schema({
 SchoolSchema.index({ name: 'text' });
 
 // Pre-save hook to hash password
-SchoolSchema.pre('save', async function(next) {
-    if (!this.isModified('password')) return next();
+SchoolSchema.pre('save', async function() {
+    if (!this.isModified('password')) return;
     this.password = await bcrypt.hash(this.password, 12);
-    next();
 });
 
 // Pre-update hooks to hash password if updating directly

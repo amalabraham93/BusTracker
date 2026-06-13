@@ -69,10 +69,9 @@ DriverSchema.index({ currentLocation: '2dsphere' });
 DriverSchema.index({ schoolId: 1, isActive: 1 });
 
 // Pre-save hook to hash password
-DriverSchema.pre('save', async function(next) {
-    if (!this.isModified('password')) return next();
+DriverSchema.pre('save', async function() {
+    if (!this.isModified('password')) return;
     this.password = await bcrypt.hash(this.password, 12);
-    next();
 });
 
 // Pre-update hooks to hash password if updating directly

@@ -76,10 +76,9 @@ StudentSchema.index({ pickupLocation: '2dsphere' });
 StudentSchema.index({ schoolId: 1, classGrade: 1, section: 1 });
 
 // Pre-save hook to hash password
-StudentSchema.pre('save', async function(next) {
-    if (!this.isModified('parentPassword')) return next();
+StudentSchema.pre('save', async function() {
+    if (!this.isModified('parentPassword')) return;
     this.parentPassword = await bcrypt.hash(this.parentPassword, 12);
-    next();
 });
 
 // Pre-update hooks to hash password if updating directly
