@@ -52,7 +52,7 @@ class TripService {
         const title = 'Trip Started';
         const message = `The ${type.toLowerCase()} trip has started.`;
         for (const phone of parentPhones) {
-            await NotificationService.sendPushNotification('parent', phone, title, message, { type });
+            await NotificationService.sendPushNotification('parent', phone, title, message, { type, alertSound: true });
         }
         
         return trip;
