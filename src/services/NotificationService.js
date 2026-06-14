@@ -17,6 +17,12 @@ class NotificationService {
             }
 
             const isProximity = data.type === 'Proximity' || data.type === 'Emergency';
+            // Play the loud bus-horn alert for proximity/emergency events, plus any
+            // notification that explicitly opts in via alertSound (e.g. trip start).
+            const useHorn = isProximity || data.alertSound === true;
+
+            // Internal-only flag; don't ship it to the client payload.
+            delete data.alertSound;
 
             // Firebase strictly requires string values in data
             const stringifiedData = typeof data === 'object' ? JSON.parse(JSON.stringify(data)) : {};
@@ -37,14 +43,14 @@ class NotificationService {
                 data: stringifiedData,
                 android: {
                     notification: {
-                        channelId: isProximity ? 'alerts_channel' : 'notification',
-                        sound: isProximity ? 'bus_horn' : 'notification'
+                        channelId: useHorn ? 'alerts_channel' : 'notification',
+                        sound: useHorn ? 'bus_horn' : 'notification'
                     }
                 },
                 apns: {
                     payload: {
                         aps: {
-                            sound: isProximity ? 'bus_horn.aiff' : 'notification.aiff'
+                            sound: useHorn ? 'bus_horn.aiff' : 'notification.aiff'
                         }
                     }
                 },
