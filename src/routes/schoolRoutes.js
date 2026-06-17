@@ -18,6 +18,8 @@ router.post('/buses', [
 ], schoolController.createBus);
 router.patch('/buses/:id', schoolController.updateBus);
 router.delete('/buses/:id', schoolController.deleteBus);
+router.delete('/buses/:id/hard', schoolController.hardDeleteBus);
+router.patch('/buses/:id/restore', schoolController.restoreBus);
 
 // --- ROUTE MANAGEMENT ---
 router.get('/routes', schoolController.getRoutes);
@@ -27,6 +29,8 @@ router.post('/routes', [
 ], schoolController.createRoute);
 router.patch('/routes/:id', schoolController.updateRoute);
 router.delete('/routes/:id', schoolController.deleteRoute);
+router.delete('/routes/:id/hard', schoolController.hardDeleteRoute);
+router.patch('/routes/:id/restore', schoolController.restoreRoute);
 router.get('/routes/:routeId/buses', schoolController.getBusesByRoute);
 
 // --- DRIVER MANAGEMENT ---
@@ -40,6 +44,8 @@ router.post('/drivers', [
 ], schoolController.createDriver);
 router.patch('/drivers/:id', schoolController.updateDriver);
 router.delete('/drivers/:id', schoolController.deleteDriver);
+router.delete('/drivers/:id/hard', schoolController.hardDeleteDriver);
+router.patch('/drivers/:id/restore', schoolController.restoreDriver);
 
 // --- STUDENT MANAGEMENT ---
 router.get('/students', schoolController.getStudents);
@@ -55,6 +61,8 @@ router.post('/students', [
 ], schoolController.createStudent);
 router.patch('/students/:id', schoolController.updateStudent);
 router.delete('/students/:id', schoolController.deleteStudent);
+router.delete('/students/:id/hard', schoolController.hardDeleteStudent);
+router.patch('/students/:id/restore', schoolController.restoreStudent);
 router.get('/students/:id/attendance', schoolController.getStudentAttendance);
 
 // --- DASHBOARD & REPORTS ---

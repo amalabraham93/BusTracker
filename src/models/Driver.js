@@ -47,6 +47,14 @@ const DriverSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
+    isDeleted: {
+        type: Boolean,
+        default: false
+    },
+    deletedAt: {
+        type: Date,
+        default: null
+    },
     schoolId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'School',

@@ -17,6 +17,9 @@ class BaseRepository {
 
     async findAll(query = {}, options = {}) {
         const { limit, skip, sort } = options;
+        if (query.isDeleted === undefined) {
+            query.isDeleted = { $ne: true };
+        }
         return await this.model.find(query).sort(sort).skip(skip).limit(limit);
     }
 
@@ -26,6 +29,10 @@ class BaseRepository {
      */
     async findPaged({ page, limit, search = '', searchFields = [], filter = {}, sort = { createdAt: -1 }, populate = '' }) {
         let query = { ...filter };
+        
+        if (query.isDeleted === undefined) {
+            query.isDeleted = { $ne: true };
+        }
 
         // 1. Handle Search (case-insensitive regex)
         if (search && searchFields.length > 0) {
@@ -76,7 +83,16 @@ class BaseRepository {
     }
 
     async delete(id) {
+        // Soft delete
+        return await this.model.findByIdAndUpdate(id, { isDeleted: true, deletedAt: new Date() }, { new: true });
+    }
+
+    async hardDelete(id) {
         return await this.model.findByIdAndDelete(id);
+    }
+
+    async restore(id) {
+        return await this.model.findByIdAndUpdate(id, { isDeleted: false, deletedAt: null }, { new: true });
     }
 }
 

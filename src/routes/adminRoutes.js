@@ -25,6 +25,8 @@ router.post('/schools', [
 ], adminController.createSchool);
 router.patch('/schools/:id', adminController.updateSchool);
 router.delete('/schools/:id', adminController.deleteSchool);
+router.delete('/schools/:id/hard', adminController.hardDeleteSchool);
+router.patch('/schools/:id/restore', adminController.restoreSchool);
 
 // --- BUS MANAGEMENT ---
 router.get('/buses', adminController.getBuses);

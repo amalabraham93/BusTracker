@@ -9,10 +9,11 @@ const AppError = require('../utils/AppError');
 // --- SCHOOL MANAGEMENT ---
 
 exports.getSchools = catchAsync(async (req, res, next) => {
-    const { page, limit, search, isActive } = req.query;
+    const { page, limit, search, isActive, isDeleted } = req.query;
     
     const filter = {};
     if (isActive !== undefined) filter.isActive = isActive === 'true';
+    if (isDeleted !== undefined) filter.isDeleted = isDeleted === 'true';
 
     const result = await SchoolRepository.findPaged({
         page,
@@ -95,6 +96,22 @@ exports.deleteSchool = catchAsync(async (req, res, next) => {
         message: 'School deleted successfully!',
         data: null
     });
+});
+
+exports.hardDeleteSchool = catchAsync(async (req, res, next) => {
+    const school = await SchoolRepository.hardDelete(req.params.id);
+    if (!school) return next(new AppError('School not found', 404));
+
+    await AuditLogRepository.logAction({ userId: 'admin', userRole: 'admin', action: 'HARD_DELETE', resource: 'School', resourceId: req.params.id });
+    res.status(200).json({ status: 'success', message: 'School permanently deleted!' });
+});
+
+exports.restoreSchool = catchAsync(async (req, res, next) => {
+    const school = await SchoolRepository.restore(req.params.id);
+    if (!school) return next(new AppError('School not found', 404));
+
+    await AuditLogRepository.logAction({ userId: 'admin', userRole: 'admin', action: 'RESTORE', resource: 'School', resourceId: req.params.id });
+    res.status(200).json({ status: 'success', message: 'School restored successfully!' });
 });
 
 // --- BUS MANAGEMENT (ADMIN) ---

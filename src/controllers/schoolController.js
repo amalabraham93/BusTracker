@@ -9,9 +9,10 @@ const AppError = require('../utils/AppError');
 // --- BUS MANAGEMENT (SCHOOL) ---
 
 exports.getBuses = catchAsync(async (req, res, next) => {
-    const { page, limit, search, isActive } = req.query;
+    const { page, limit, search, isActive, isDeleted } = req.query;
     const filter = { schoolId: req.user.id };
     if (isActive !== undefined) filter.isActive = isActive === 'true';
+    if (isDeleted !== undefined) filter.isDeleted = isDeleted === 'true';
 
     const result = await BusRepository.findPaged({
         page,
@@ -97,12 +98,31 @@ exports.deleteBus = catchAsync(async (req, res, next) => {
     });
 });
 
+exports.hardDeleteBus = catchAsync(async (req, res, next) => {
+    const bus = await BusRepository.findOne({ _id: req.params.id, schoolId: req.user.id });
+    if (!bus) return next(new AppError('Bus not found or access denied', 404));
+
+    await BusRepository.hardDelete(req.params.id);
+    await AuditLogRepository.logAction({ userId: req.user.id, userRole: 'school', action: 'HARD_DELETE', resource: 'Bus', resourceId: req.params.id });
+    res.status(200).json({ status: 'success', message: 'Bus permanently deleted!' });
+});
+
+exports.restoreBus = catchAsync(async (req, res, next) => {
+    const bus = await BusRepository.findOne({ _id: req.params.id, schoolId: req.user.id });
+    if (!bus) return next(new AppError('Bus not found or access denied', 404));
+
+    await BusRepository.restore(req.params.id);
+    await AuditLogRepository.logAction({ userId: req.user.id, userRole: 'school', action: 'RESTORE', resource: 'Bus', resourceId: req.params.id });
+    res.status(200).json({ status: 'success', message: 'Bus restored successfully!' });
+});
+
 // --- DRIVER MANAGEMENT (SCHOOL) ---
 
 exports.getDrivers = catchAsync(async (req, res, next) => {
-    const { page, limit, search, isActive } = req.query;
+    const { page, limit, search, isActive, isDeleted } = req.query;
     const filter = { schoolId: req.user.id };
     if (isActive !== undefined) filter.isActive = isActive === 'true';
+    if (isDeleted !== undefined) filter.isDeleted = isDeleted === 'true';
 
     const result = await DriverRepository.findPaged({
         page,
@@ -140,9 +160,10 @@ exports.updateDriver = catchAsync(async (req, res, next) => {
     const driver = await DriverRepository.findOne({ _id: req.params.id, schoolId: req.user.id });
     if (!driver) return next(new AppError('Driver not found or access denied', 404));
 
-    // School cannot update driver password after creation
     const updateData = { ...req.body };
-    delete updateData.password;
+    if (!updateData.password) {
+        delete updateData.password;
+    }
 
     const updatedDriver = await DriverRepository.update(req.params.id, updateData);
     await AuditLogRepository.logAction({
@@ -179,12 +200,31 @@ exports.deleteDriver = catchAsync(async (req, res, next) => {
     });
 });
 
+exports.hardDeleteDriver = catchAsync(async (req, res, next) => {
+    const driver = await DriverRepository.findOne({ _id: req.params.id, schoolId: req.user.id });
+    if (!driver) return next(new AppError('Driver not found or access denied', 404));
+
+    await DriverRepository.hardDelete(req.params.id);
+    await AuditLogRepository.logAction({ userId: req.user.id, userRole: 'school', action: 'HARD_DELETE', resource: 'Driver', resourceId: req.params.id });
+    res.status(200).json({ status: 'success', message: 'Driver permanently deleted!' });
+});
+
+exports.restoreDriver = catchAsync(async (req, res, next) => {
+    const driver = await DriverRepository.findOne({ _id: req.params.id, schoolId: req.user.id });
+    if (!driver) return next(new AppError('Driver not found or access denied', 404));
+
+    await DriverRepository.restore(req.params.id);
+    await AuditLogRepository.logAction({ userId: req.user.id, userRole: 'school', action: 'RESTORE', resource: 'Driver', resourceId: req.params.id });
+    res.status(200).json({ status: 'success', message: 'Driver restored successfully!' });
+});
+
 // --- ROUTE MANAGEMENT (SCHOOL) ---
 
 exports.getRoutes = catchAsync(async (req, res, next) => {
-    const { page, limit, search, isActive } = req.query;
+    const { page, limit, search, isActive, isDeleted } = req.query;
     const filter = { schoolId: req.user.id };
     if (isActive !== undefined) filter.isActive = isActive === 'true';
+    if (isDeleted !== undefined) filter.isDeleted = isDeleted === 'true';
 
     const result = await RouteRepository.findPaged({
         page,
@@ -273,6 +313,24 @@ exports.deleteRoute = catchAsync(async (req, res, next) => {
     });
 });
 
+exports.hardDeleteRoute = catchAsync(async (req, res, next) => {
+    const route = await RouteRepository.findOne({ _id: req.params.id, schoolId: req.user.id });
+    if (!route) return next(new AppError('Route not found or access denied', 404));
+
+    await RouteRepository.hardDelete(req.params.id);
+    await AuditLogRepository.logAction({ userId: req.user.id, userRole: 'school', action: 'HARD_DELETE', resource: 'Route', resourceId: req.params.id });
+    res.status(200).json({ status: 'success', message: 'Route permanently deleted!' });
+});
+
+exports.restoreRoute = catchAsync(async (req, res, next) => {
+    const route = await RouteRepository.findOne({ _id: req.params.id, schoolId: req.user.id });
+    if (!route) return next(new AppError('Route not found or access denied', 404));
+
+    await RouteRepository.restore(req.params.id);
+    await AuditLogRepository.logAction({ userId: req.user.id, userRole: 'school', action: 'RESTORE', resource: 'Route', resourceId: req.params.id });
+    res.status(200).json({ status: 'success', message: 'Route restored successfully!' });
+});
+
 exports.getBusesByRoute = catchAsync(async (req, res, next) => {
     const { routeId } = req.params;
     const route = await RouteRepository.findOne({ _id: routeId, schoolId: req.user.id });
@@ -289,9 +347,10 @@ exports.getBusesByRoute = catchAsync(async (req, res, next) => {
 // --- STUDENT MANAGEMENT (SCHOOL) ---
 
 exports.getStudents = catchAsync(async (req, res, next) => {
-    const { page, limit, search, isActive, classGrade } = req.query;
+    const { page, limit, search, isActive, classGrade, isDeleted } = req.query;
     const filter = { schoolId: req.user.id };
     if (isActive !== undefined) filter.isActive = isActive === 'true';
+    if (isDeleted !== undefined) filter.isDeleted = isDeleted === 'true';
     if (classGrade) filter.classGrade = classGrade;
 
     const result = await StudentRepository.findPaged({
@@ -307,11 +366,16 @@ exports.getStudents = catchAsync(async (req, res, next) => {
 });
 
 exports.getStudentsList = catchAsync(async (req, res, next) => {
-    const { classGrade, section } = req.query;
+    const { classGrade, section, isDeleted } = req.query;
     const filter = { schoolId: req.user.id };
     
     if (classGrade) filter.classGrade = classGrade;
     if (section) filter.section = section;
+    if (isDeleted !== undefined) {
+        filter.isDeleted = isDeleted === 'true';
+    } else {
+        filter.isDeleted = { $ne: true };
+    }
 
     const students = await StudentRepository.model.find(filter)
         .populate('assignedBus assignedRoute')
@@ -447,6 +511,24 @@ exports.deleteStudent = catchAsync(async (req, res, next) => {
         message: 'Student deleted successfully!',
         data: null 
     });
+});
+
+exports.hardDeleteStudent = catchAsync(async (req, res, next) => {
+    const student = await StudentRepository.findOne({ _id: req.params.id, schoolId: req.user.id });
+    if (!student) return next(new AppError('Student not found or access denied', 404));
+
+    await StudentRepository.hardDelete(req.params.id);
+    await AuditLogRepository.logAction({ userId: req.user.id, userRole: 'school', action: 'HARD_DELETE', resource: 'Student', resourceId: req.params.id });
+    res.status(200).json({ status: 'success', message: 'Student permanently deleted!' });
+});
+
+exports.restoreStudent = catchAsync(async (req, res, next) => {
+    const student = await StudentRepository.findOne({ _id: req.params.id, schoolId: req.user.id });
+    if (!student) return next(new AppError('Student not found or access denied', 404));
+
+    await StudentRepository.restore(req.params.id);
+    await AuditLogRepository.logAction({ userId: req.user.id, userRole: 'school', action: 'RESTORE', resource: 'Student', resourceId: req.params.id });
+    res.status(200).json({ status: 'success', message: 'Student restored successfully!' });
 });
 
 exports.getStudentAttendance = catchAsync(async (req, res, next) => {
