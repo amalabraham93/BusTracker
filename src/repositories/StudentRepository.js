@@ -13,15 +13,17 @@ class StudentRepository extends BaseRepository {
             .populate('assignedRoute', 'routeName startPoint endPoint');
     }
 
-    async findNearbyStudents(lat, lng, radiusInKm, excludeIds = []) {
-        console.log(`Checking nearby students within ${radiusInKm}km - Excluded: ${excludeIds.length}`);
+    async findNearbyStudents(lat, lng, radiusInKm, filter = {}) {
+        const numLat = Number(lat);
+        const numLng = Number(lng);
+        console.log(`Checking nearby students within ${radiusInKm}km - filter:`, filter);
         return await this.model.find({
-            _id: { $nin: excludeIds },
+            ...filter,
             pickupLocation: {
                 $near: {
                     $geometry: {
                         type: "Point",
-                        coordinates: [lng, lat]
+                        coordinates: [numLng, numLat]
                     },
                     $maxDistance: radiusInKm * 1000 // Convert km to meters
                 }
