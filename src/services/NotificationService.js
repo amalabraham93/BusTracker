@@ -17,9 +17,9 @@ class NotificationService {
             }
 
             const isProximity = data.type === 'Proximity' || data.type === 'Emergency';
-            // Play the loud bus-horn alert for proximity/emergency events, plus any
-            // notification that explicitly opts in via alertSound (e.g. trip start).
-            const useHorn = isProximity || data.alertSound === true;
+            // Play the loud bus-horn alert for emergency events, plus any
+            // notification that explicitly opts in via alertSound.
+            const useHorn = data.type === 'Emergency' || data.alertSound === true || data.alertSound === 'true';
 
             // Internal-only flag; don't ship it to the client payload.
             delete data.alertSound;
