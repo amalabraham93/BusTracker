@@ -152,9 +152,11 @@ class TripService {
 
         // 500m Check (Do this FIRST so we don't send 2km if they are already within 500m)
         const students500m = await StudentRepository.findNearbyStudents(lat, lng, 0.5, studentFilter);
+        logger.info(`[Proximity Check] 500m check found ${students500m.length} students.`);
         for (const student of students500m) {
             const key500m = `trip:${tripId}:student:${student._id}:notified:500m`;
             if (!await redisClient.get(key500m)) {
+                logger.info(`[Proximity Check] Triggering 500m alert for student ${student.name}`);
                 await NotificationService.sendPushNotification(
                     'parent',
                     student.parentPhone,
@@ -164,6 +166,30 @@ class TripService {
                 );
                 await redisClient.set(key500m, 'true', { EX: 43200 });
                 
+                // Mark 1km and 2km as notified as well to prevent double-firing
+                const key1km = `trip:${tripId}:student:${student._id}:notified:1km`;
+                await redisClient.set(key1km, 'true', { EX: 43200 });
+                const key2km = `trip:${tripId}:student:${student._id}:notified:2km`;
+                await redisClient.set(key2km, 'true', { EX: 43200 });
+            }
+        }
+
+        // 1km Check (Do this before 2km)
+        const students1km = await StudentRepository.findNearbyStudents(lat, lng, 1, studentFilter);
+        logger.info(`[Proximity Check] 1km check found ${students1km.length} students.`);
+        for (const student of students1km) {
+            const key1km = `trip:${tripId}:student:${student._id}:notified:1km`;
+            if (!await redisClient.get(key1km)) {
+                logger.info(`[Proximity Check] Triggering 1km alert for student ${student.name}`);
+                await NotificationService.sendPushNotification(
+                    'parent',
+                    student.parentPhone,
+                    'Bus Getting Closer',
+                    `The bus is within 1km of your pickup location.`,
+                    { type: 'Proximity', alertSound: 'true' }
+                );
+                await redisClient.set(key1km, 'true', { EX: 43200 });
+                
                 // Mark 2km as notified as well to prevent double-firing
                 const key2km = `trip:${tripId}:student:${student._id}:notified:2km`;
                 await redisClient.set(key2km, 'true', { EX: 43200 });
@@ -172,9 +198,11 @@ class TripService {
 
         // 2km Check
         const students2km = await StudentRepository.findNearbyStudents(lat, lng, 2, studentFilter);
+        logger.info(`[Proximity Check] 2km check found ${students2km.length} students.`);
         for (const student of students2km) {
             const key2km = `trip:${tripId}:student:${student._id}:notified:2km`;
             if (!await redisClient.get(key2km)) {
+                logger.info(`[Proximity Check] Triggering 2km alert for student ${student.name}`);
                 await NotificationService.sendPushNotification(
                     'parent',
                     student.parentPhone,
