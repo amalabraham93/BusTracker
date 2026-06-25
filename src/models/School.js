@@ -26,7 +26,15 @@ const SchoolSchema = new mongoose.Schema({
     },
     phone: {
         type: String,
-        required: false
+        required: [true, 'School phone number is required'],
+        validate: {
+            validator: function(v) {
+                if(!v) return false;
+                const stripped = v.replace(/[\s-]/g, '');
+                return /^(\+91|91|0)?[6789]\d{9}$/.test(stripped);
+            },
+            message: props => `${props.value} is not a valid Indian phone number!`
+        }
     },
     schoolID: {
         type: String,
