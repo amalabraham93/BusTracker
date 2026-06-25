@@ -30,7 +30,7 @@ exports.getSchools = catchAsync(async (req, res, next) => {
 });
 
 exports.createSchool = catchAsync(async (req, res, next) => {
-    const { name, email, password, address, schoolID } = req.body;
+    const { name, email, password, address, phone, schoolID } = req.body;
 
     const existingSchool = await SchoolRepository.findByEmail(email);
     if (existingSchool) {
@@ -38,7 +38,7 @@ exports.createSchool = catchAsync(async (req, res, next) => {
     }
 
     const school = await SchoolRepository.create({
-        name, email, password, address, schoolID
+        name, email, password, address, phone, schoolID
     });
 
     school.password = undefined;

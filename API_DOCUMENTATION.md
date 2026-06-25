@@ -125,7 +125,7 @@ Get attendance statistics and records for all schools.
 Manage all schools in the system.
 - **Endpoints**: 
     - `GET /admin/schools` (Lists all schools. Query: `page`, `limit`, `search`, `isActive`)
-    - `POST /admin/schools` (Create school. Body: `name`, `email`, `password`, `address`, `schoolID`)
+    - `POST /admin/schools` (Create school. Body: `name`, `email`, `password`, `address`, `phone`, `schoolID`)
     - `PATCH /admin/schools/:id` (Update school. Body: any field including `isActive`)
     - `DELETE /admin/schools/:id` (Delete school)
 

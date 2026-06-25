@@ -24,6 +24,10 @@ const SchoolSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    phone: {
+        type: String,
+        required: false
+    },
     schoolID: {
         type: String,
         unique: true,
