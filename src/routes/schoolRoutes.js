@@ -47,6 +47,9 @@ router.delete('/drivers/:id', schoolController.deleteDriver);
 router.delete('/drivers/:id/hard', schoolController.hardDeleteDriver);
 router.patch('/drivers/:id/restore', schoolController.restoreDriver);
 
+// --- PARENT MANAGEMENT ---
+router.get('/parents/check', schoolController.checkParentExists);
+
 // --- STUDENT MANAGEMENT ---
 router.get('/students', schoolController.getStudents);
 router.get('/students/filter', schoolController.getStudentsList);
@@ -56,7 +59,6 @@ router.post('/students', [
     body('classGrade').exists().withMessage('Class/Grade is required'),
     body('section').exists().withMessage('Section is required'),
     body('parentPhone').exists().withMessage('Parent phone is required'),
-    body('parentPassword').exists().withMessage('Parent password is required'),
     validate
 ], schoolController.createStudent);
 router.patch('/students/:id', schoolController.updateStudent);

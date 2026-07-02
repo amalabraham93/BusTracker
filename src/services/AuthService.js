@@ -5,6 +5,7 @@ const SchoolRepository = require('../repositories/SchoolRepository');
 const DriverRepository = require('../repositories/DriverRepository');
 const PhoneAuth = require('../models/PhoneAuth');
 const StudentRepository = require('../repositories/StudentRepository');
+const Parent = require('../models/Parent');
 const AppError = require('../utils/AppError');
 const logger = require('../utils/logger');
 
@@ -25,11 +26,8 @@ class AuthService {
                 // Migrate to hash immediately
                 const hashed = await bcrypt.hash(inputPassword, 12);
                 if (role === 'parent') {
-                    const StudentRepository = require('../repositories/StudentRepository');
-                    await StudentRepository.model.updateMany(
-                        { parentPhone: user.parentPhone },
-                        { parentPassword: hashed }
-                    );
+                    user[passwordField] = hashed;
+                    await user.constructor.updateOne({ _id: user._id }, { [passwordField]: hashed });
                 } else {
                     user[passwordField] = hashed;
                     await user.constructor.updateOne({ _id: user._id }, { [passwordField]: hashed });
@@ -71,8 +69,8 @@ class AuthService {
             const driver = await DriverRepository.findByPhone(phone);
             if (!driver) throw new AppError('No driver found with this phone number', 404);
         } else if (role === 'parent') {
-            const student = await StudentRepository.findOne({ parentPhone: phone });
-            if (!student) throw new AppError('No parent record found with this phone number', 404);
+            const parent = await Parent.findOne({ phone });
+            if (!parent) throw new AppError('No parent record found with this phone number', 404);
         }
 
         // 2. Generate 4-digit OTP
@@ -114,10 +112,9 @@ class AuthService {
         if (role === 'driver') {
             user = await DriverRepository.model.findOne({ phone }).populate('schoolId', 'name email address phone');
         } else if (role === 'parent') {
-            // Check if phone exists in student records
-            const student = await StudentRepository.model.findOne({ parentPhone: phone }).populate('schoolId', 'name email address phone');
-            if (!student) throw new AppError('Parent record no longer exists', 404);
-            user = { _id: phone, phone, email: student.parentEmail, role: 'parent', schoolId: student.schoolId };
+            const parent = await Parent.findOne({ phone });
+            if (!parent) throw new AppError('Parent record no longer exists', 404);
+            user = { _id: parent._id, phone: parent.phone, email: parent.email, role: 'parent' };
         }
 
         await PhoneAuth.deleteOne({ _id: auth._id });
@@ -143,11 +140,11 @@ class AuthService {
     }
 
     async loginParentEmail(email, password) {
-        const student = await StudentRepository.model.findOne({ parentEmail: email }).select('+parentPassword').populate('schoolId', 'name email address phone');
-        if (!student || !(await this.compareAndMigratePassword(student, password, 'parent'))) {
+        const parent = await Parent.findOne({ email }).select('+password');
+        if (!parent || !(await this.compareAndMigratePassword(parent, password, 'parent'))) {
             throw new AppError('Incorrect email or password', 400);
         }
-        return { _id: student.parentPhone, phone: student.parentPhone, email: email, role: 'parent', schoolId: student.schoolId };
+        return { _id: parent._id, phone: parent.phone, email: parent.email, role: 'parent' };
     }
 
     // Deprecated in favor of new verifyOtp flow but keeping for compatibility if needed
@@ -175,14 +172,12 @@ class AuthService {
             driver.password = newPassword;
             await driver.save(); // triggers pre-save hook
         } else if (role === 'parent') {
-            const student = await StudentRepository.model.findOne({ parentPhone: userId }).select('+parentPassword');
-            if (!student || !(await this.compareAndMigratePassword(student, currentPassword, 'parent'))) {
+            const parent = await Parent.findById(userId).select('+password');
+            if (!parent || !(await this.compareAndMigratePassword(parent, currentPassword, 'parent'))) {
                 throw new AppError('Incorrect current password', 400);
             }
-            await StudentRepository.model.updateMany(
-                { parentPhone: userId },
-                { parentPassword: newPassword } // triggers pre-updateMany hook
-            );
+            parent.password = newPassword;
+            await parent.save(); // triggers pre-save hook
         } else {
             throw new AppError('Password change not supported for this role', 400);
         }

@@ -8,18 +8,20 @@ exports.getChildren = catchAsync(async (req, res, next) => {
     // If authenticated as Admin, query param might be allowed.
     // Let's assume Parent role uses req.user.phone
 
-    let phone;
+    let parentId;
     if (req.user.role === 'parent') {
-        phone = req.user.id;
+        parentId = req.user.id;
     } else {
-        phone = req.query.phone;
+        // Fallback for admin if needed
+        parentId = req.query.parentId;
     }
 
-    if (!phone) {
-        return next(new AppError('Phone number required', 400));
+    if (!parentId) {
+        return next(new AppError('Parent ID required', 400));
     }
 
-    const children = await StudentRepository.findByParentPhone(phone);
+    const children = await StudentRepository.model.find({ parentId, isDeleted: { $ne: true } })
+        .populate('assignedRoute assignedBus schoolId');
     const TripRepository = require('../repositories/TripRepository');
 
     const childrenWithTripInfo = await Promise.all(children.map(async (child) => {
@@ -56,10 +58,10 @@ const AttendanceRepository = require('../repositories/AttendanceRepository');
 
 exports.getStudentActivity = catchAsync(async (req, res, next) => {
     const { id } = req.params;
-    const phone = req.user.id;
+    const parentId = req.user.id;
 
     // Verify student belongs to parent
-    const student = await StudentRepository.model.findOne({ _id: id, parentPhone: phone })
+    const student = await StudentRepository.model.findOne({ _id: id, parentId })
         .populate('schoolId', 'name address phone email')
         .populate('assignedRoute', 'routeName startPoint endPoint')
         .populate('assignedBus', 'busNumber capacity');
@@ -136,14 +138,14 @@ exports.getStudentActivity = catchAsync(async (req, res, next) => {
 
 exports.getStudentAttendance = catchAsync(async (req, res, next) => {
     const { id } = req.params;
-    const phone = req.user.id;
+    const parentId = req.user.id;
     const { month } = req.query; // format YYYY-MM
 
     if (!month || !/^\d{4}-\d{2}$/.test(month)) {
         return next(new AppError('Valid month required in format YYYY-MM', 400));
     }
 
-    const student = await StudentRepository.model.findOne({ _id: id, parentPhone: phone })
+    const student = await StudentRepository.model.findOne({ _id: id, parentId })
         .populate('schoolId', 'name address phone email')
         .populate('assignedRoute', 'routeName startPoint endPoint')
         .populate('assignedBus', 'busNumber capacity');

@@ -3,6 +3,7 @@ const RouteRepository = require('../repositories/RouteRepository');
 const StudentRepository = require('../repositories/StudentRepository');
 const DriverRepository = require('../repositories/DriverRepository');
 const AuditLogRepository = require('../repositories/AuditLogRepository');
+const Parent = require('../models/Parent');
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/AppError');
 
@@ -388,6 +389,24 @@ exports.getStudentsList = catchAsync(async (req, res, next) => {
     });
 });
 
+exports.checkParentExists = catchAsync(async (req, res, next) => {
+    const { phone, email } = req.query;
+    if (!phone && !email) {
+        return next(new AppError('Phone number or email is required', 400));
+    }
+    
+    let orQuery = [];
+    if (phone) orQuery.push({ phone });
+    if (email) orQuery.push({ email: email.toLowerCase().trim() });
+
+    const parent = await Parent.findOne({ $or: orQuery }).select('email phone');
+    if (parent) {
+        res.status(200).json({ status: 'success', exists: true, parent: { email: parent.email, phone: parent.phone } });
+    } else {
+        res.status(200).json({ status: 'success', exists: false });
+    }
+});
+
 exports.createStudent = catchAsync(async (req, res, next) => {
     const { assignedRoute, assignedBus } = req.body;
 
@@ -416,6 +435,30 @@ exports.createStudent = catchAsync(async (req, res, next) => {
             data.pickupLocation.name = req.body.locationName;
         }
     }
+
+    // Handle Parent mapping
+    let parentQuery = [];
+    if (req.body.parentPhone) parentQuery.push({ phone: req.body.parentPhone });
+    if (req.body.parentEmail) parentQuery.push({ email: req.body.parentEmail.toLowerCase().trim() });
+    
+    let parent = null;
+    if (parentQuery.length > 0) {
+        parent = await Parent.findOne({ $or: parentQuery });
+    }
+
+    if (!parent) {
+        if (!req.body.parentPassword) {
+            return next(new AppError('Parent password is required for new parents', 400));
+        }
+        parent = await Parent.create({
+            phone: req.body.parentPhone,
+            email: req.body.parentEmail,
+            password: req.body.parentPassword
+        });
+    }
+    data.parentId = parent._id;
+    if (!data.parentEmail) data.parentEmail = parent.email;
+    if (!data.parentPhone) data.parentPhone = parent.phone;
 
     let student = await StudentRepository.create(data);
     student = await student.populate('assignedBus assignedRoute');
@@ -456,41 +499,48 @@ exports.updateStudent = catchAsync(async (req, res, next) => {
         }
     }
 
-    const updateData = { ...req.body };
+    const data = { ...req.body };
+    if (data.parentPassword) {
+        delete data.parentPassword; // Password should not be updated via Student update anymore
+    }
 
     if (req.body.lat !== undefined && req.body.lng !== undefined) {
-        updateData.pickupLocation = {
+        data.pickupLocation = {
             type: 'Point',
             coordinates: [parseFloat(req.body.lng), parseFloat(req.body.lat)]
         };
         if (req.body.locationName) {
-            updateData.pickupLocation.name = req.body.locationName;
+            data.pickupLocation.name = req.body.locationName;
         }
     }
 
-    let updatedStudent = await StudentRepository.update(req.params.id, updateData);
-    updatedStudent = await updatedStudent.populate('assignedBus assignedRoute');
-
-    // If parent password was updated, sync it across all siblings with the same parent phone
-    if (req.body.parentPassword) {
-        await StudentRepository.model.updateMany(
-            { parentPhone: updatedStudent.parentPhone, schoolId: req.user.id },
-            { parentPassword: req.body.parentPassword }
-        );
+    // Handle Parent phone/email update if changed
+    if (req.body.parentPhone && req.body.parentPhone !== student.parentPhone) {
+        let parent = await Parent.findOne({ phone: req.body.parentPhone });
+        if (!parent) {
+             return next(new AppError('Cannot change to a non-existent parent. Please create the parent first or keep the existing phone.', 400));
+        }
+        data.parentId = parent._id;
+        data.parentEmail = parent.email;
     }
+
+    const updatedStudent = await StudentRepository.update(req.params.id, data);
+    const populated = await StudentRepository.model.findById(req.params.id)
+        .populate('assignedBus assignedRoute');
 
     await AuditLogRepository.logAction({
         userId: req.user.id,
         userRole: 'school',
         action: 'UPDATE',
         resource: 'Student',
-        resourceId: student._id,
-        details: updateData
+        resourceId: updatedStudent._id,
+        details: req.body
     });
+
     res.status(200).json({ 
         status: 'success', 
         message: 'Student updated successfully!',
-        data: { student: updatedStudent } 
+        data: { student: populated } 
     });
 });
 
