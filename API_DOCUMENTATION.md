@@ -191,6 +191,7 @@ Manage resources **strictly for your own school**. All actions are **Logged**.
     - `GET/POST/PATCH/DELETE /school/students` (Paginated list)
     - `GET /school/students/filter?classGrade=10&section=A` (Unpaginated list, filterable by class and section)
     - `GET /school/students/:id/attendance?month=YYYY-MM` (View monthly attendance for a specific student)
+    - `GET /school/parents/check?phone=...&email=...` (Check if a parent already exists by phone or email before creating a student)
 - **Fields (List)**:
     - `name`: Student Name.
     - `classGrade`: Class.
@@ -299,14 +300,15 @@ Connect to `socket.io` server for instant updates.
 *Requires `Parent` Role*
 
 ### 1. Unified Login
-- **Endpoint**: `/auth/login`
+- **Endpoint**: `/auth/login` (and `/auth/verify-otp`)
 - **Method**: `POST`
 - **Description**: Parents log in using `role: "parent"` with either `email` and `password` or `phone` and `otp`. Since multiple students can share the same parent email or phone, the generated auth token will provide access to all linked students automatically.
+- **⚠️ Important Change**: The parent login response *no longer* contains a `schoolId` on the `user` object, because a single parent account can now be linked to multiple students across *different* schools. You must call `/parent/children` after login to retrieve each student's specific `schoolId`.
 
 ### 2. Dashboard (Get Children)
 - **Endpoint**: `/parent/children`
 - **Method**: `GET`
-- **Description**: Returns all students assigned to the logged-in parent, populated with `schoolId`, `assignedBus`, `assignedRoute`, `classGrade`, and `section`.
+- **Description**: Returns all students assigned to the logged-in parent. Each child object is populated with its respective `schoolId`, `assignedBus`, `assignedRoute`, `classGrade`, and `section`.
 
 ### 3. Real-Time Activity
 - **Endpoint**: `/parent/student/:id/activity`
