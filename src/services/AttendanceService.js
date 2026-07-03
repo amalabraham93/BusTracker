@@ -35,7 +35,12 @@ class AttendanceService {
                 'parent',
                 student.parentPhone,
                 'Attendance Update',
-                message
+                message,
+                { 
+                    type: 'Attendance',
+                    studentId: student._id.toString(), 
+                    status: status 
+                }
             );
 
             try {
