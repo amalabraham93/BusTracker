@@ -39,7 +39,8 @@ class AttendanceService {
                 { 
                     type: 'Attendance',
                     studentId: student._id.toString(), 
-                    status: status 
+                    status: status,
+                    parentId: student.parentId ? student.parentId.toString() : ''
                 }
             );
 
