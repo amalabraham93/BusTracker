@@ -11,7 +11,9 @@ const logger = require('../utils/logger');
 
 class AuthService {
     async compareAndMigratePassword(user, inputPassword, role) {
-        const passwordField = role === 'parent' ? 'parentPassword' : 'password';
+        // Now that parents have their own schema, their password is also in the 'password' field.
+        // It was previously 'parentPassword' when it was part of the Student schema.
+        const passwordField = 'password';
         const storedPassword = user[passwordField];
 
         if (!storedPassword) return false;
