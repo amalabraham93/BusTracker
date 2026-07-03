@@ -44,7 +44,8 @@ class AttendanceService {
                     status,
                     studentId,
                     name: student.name,
-                    tripId
+                    tripId,
+                    parent_id: student.parentId
                 });
             } catch (e) {
                 // Ignore if socket isn't initialized
