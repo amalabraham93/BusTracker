@@ -500,8 +500,13 @@ exports.updateStudent = catchAsync(async (req, res, next) => {
     }
 
     const data = { ...req.body };
-    if (data.parentPassword) {
-        delete data.parentPassword; // Password should not be updated via Student update anymore
+    if (req.body.parentPassword) {
+        const parent = await Parent.findById(student.parentId);
+        if (parent) {
+            parent.password = req.body.parentPassword;
+            await parent.save();
+        }
+        delete data.parentPassword;
     }
 
     if (req.body.lat !== undefined && req.body.lng !== undefined) {

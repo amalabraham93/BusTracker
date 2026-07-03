@@ -28,7 +28,10 @@ const ParentSchema = new mongoose.Schema({
 ParentSchema.pre('save', async function() {
     if (!this.isModified('password')) return;
     if (this.password) {
-        this.password = await bcrypt.hash(this.password, 12);
+        // Only hash if it's not already a bcrypt hash
+        if (!/^\$2[aby]\$\d{2}\$[./A-Za-z0-9]{53}$/.test(this.password)) {
+            this.password = await bcrypt.hash(this.password, 12);
+        }
     }
 });
 
@@ -45,5 +48,7 @@ const hashPasswordInUpdate = async function() {
 ParentSchema.pre('findOneAndUpdate', hashPasswordInUpdate);
 ParentSchema.pre('updateMany', hashPasswordInUpdate);
 ParentSchema.pre('updateOne', hashPasswordInUpdate);
+
+
 
 module.exports = mongoose.model('Parent', ParentSchema);
