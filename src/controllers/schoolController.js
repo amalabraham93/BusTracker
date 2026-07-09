@@ -437,16 +437,25 @@ exports.createStudent = catchAsync(async (req, res, next) => {
     }
 
     // Handle Parent mapping
-    let parentQuery = [];
-    if (req.body.parentPhone) parentQuery.push({ phone: req.body.parentPhone });
-    if (req.body.parentEmail) parentQuery.push({ email: req.body.parentEmail.toLowerCase().trim() });
-    
     let parent = null;
-    if (parentQuery.length > 0) {
-        parent = await Parent.findOne({ $or: parentQuery });
+    if (req.body.parentPhone) {
+        parent = await Parent.findOne({ phone: req.body.parentPhone });
+    }
+    if (!parent && req.body.parentEmail) {
+        parent = await Parent.findOne({ email: req.body.parentEmail.toLowerCase().trim() });
     }
 
-    if (!parent) {
+    if (parent) {
+        if (req.body.parentPhone && parent.phone !== req.body.parentPhone) {
+            return next(new AppError(`Email is already registered with a different phone number (${parent.phone}).`, 400));
+        }
+        if (req.body.parentEmail && parent.email && parent.email !== req.body.parentEmail.toLowerCase().trim()) {
+            return next(new AppError(`Phone number is already registered with a different email (${parent.email}).`, 400));
+        }
+    } else {
+        if (!req.body.parentPhone) {
+            return next(new AppError('Parent phone is required', 400));
+        }
         if (!req.body.parentPassword) {
             return next(new AppError('Parent password is required for new parents', 400));
         }
@@ -456,9 +465,10 @@ exports.createStudent = catchAsync(async (req, res, next) => {
             password: req.body.parentPassword
         });
     }
+
     data.parentId = parent._id;
-    if (!data.parentEmail) data.parentEmail = parent.email;
-    if (!data.parentPhone) data.parentPhone = parent.phone;
+    data.parentEmail = parent.email;
+    data.parentPhone = parent.phone;
 
     let student = await StudentRepository.create(data);
     student = await student.populate('assignedBus assignedRoute');
@@ -520,13 +530,23 @@ exports.updateStudent = catchAsync(async (req, res, next) => {
     }
 
     // Handle Parent phone/email update if changed
-    if (req.body.parentPhone && req.body.parentPhone !== student.parentPhone) {
+    if (req.body.parentPhone) {
         let parent = await Parent.findOne({ phone: req.body.parentPhone });
         if (!parent) {
              return next(new AppError('Cannot change to a non-existent parent. Please create the parent first or keep the existing phone.', 400));
         }
+        if (req.body.parentEmail && parent.email && parent.email !== req.body.parentEmail.toLowerCase().trim()) {
+             return next(new AppError(`Phone number is already registered with a different email (${parent.email}).`, 400));
+        }
         data.parentId = parent._id;
         data.parentEmail = parent.email;
+        data.parentPhone = parent.phone;
+    } else if (req.body.parentEmail) {
+        let parent = await Parent.findById(student.parentId);
+        if (parent && parent.email && parent.email !== req.body.parentEmail.toLowerCase().trim()) {
+             return next(new AppError(`Cannot change parent email. Phone number is registered to ${parent.email}.`, 400));
+        }
+        data.parentEmail = parent ? parent.email : req.body.parentEmail;
     }
 
     const updatedStudent = await StudentRepository.update(req.params.id, data);
