@@ -23,6 +23,13 @@ const initSocket = (server) => {
         });
 
         socket.on('joinTrip', (tripId, callback) => {
+            // Auto-leave previous trip rooms to prevent jumping markers on the frontend
+            socket.rooms.forEach(room => {
+                if (room.startsWith('trip:') && room !== `trip:${tripId}`) {
+                    socket.leave(room);
+                }
+            });
+
             socket.join(`trip:${tripId}`);
             logger.info(`Client ${socket.id} joined trip:${tripId}`);
             if (typeof callback === 'function') {
