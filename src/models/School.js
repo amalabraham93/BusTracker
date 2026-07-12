@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
+const softDeletePlugin = require('./plugins/softDeletePlugin');
 
 const SchoolSchema = new mongoose.Schema({
     name: {
@@ -94,5 +95,7 @@ const hashPasswordInUpdate = async function() {
 SchoolSchema.pre('findOneAndUpdate', hashPasswordInUpdate);
 SchoolSchema.pre('updateMany', hashPasswordInUpdate);
 SchoolSchema.pre('updateOne', hashPasswordInUpdate);
+
+SchoolSchema.plugin(softDeletePlugin);
 
 module.exports = mongoose.model('School', SchoolSchema);

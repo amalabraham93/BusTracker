@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
+const softDeletePlugin = require('./plugins/softDeletePlugin');
 
 const StudentSchema = new mongoose.Schema({
     name: {
@@ -88,6 +89,8 @@ const StudentSchema = new mongoose.Schema({
 StudentSchema.index({ pickupLocation: '2dsphere' });
 // Compound index for finding students in a school/class
 StudentSchema.index({ schoolId: 1, classGrade: 1, section: 1 });
+
+StudentSchema.plugin(softDeletePlugin);
 
 // Removed password hooks as password is now in Parent schema
 

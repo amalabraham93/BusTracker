@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
+const softDeletePlugin = require('./plugins/softDeletePlugin');
 
 const DriverSchema = new mongoose.Schema({
     name: {
@@ -95,5 +96,7 @@ const hashPasswordInUpdate = async function() {
 DriverSchema.pre('findOneAndUpdate', hashPasswordInUpdate);
 DriverSchema.pre('updateMany', hashPasswordInUpdate);
 DriverSchema.pre('updateOne', hashPasswordInUpdate);
+
+DriverSchema.plugin(softDeletePlugin);
 
 module.exports = mongoose.model('Driver', DriverSchema);

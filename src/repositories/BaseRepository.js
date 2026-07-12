@@ -17,9 +17,6 @@ class BaseRepository {
 
     async findAll(query = {}, options = {}) {
         const { limit, skip, sort } = options;
-        if (query.isDeleted === undefined) {
-            query.isDeleted = { $ne: true };
-        }
         return await this.model.find(query).sort(sort).skip(skip).limit(limit);
     }
 
@@ -29,10 +26,6 @@ class BaseRepository {
      */
     async findPaged({ page, limit, search = '', searchFields = [], filter = {}, sort = { createdAt: -1 }, populate = '' }) {
         let query = { ...filter };
-        
-        if (query.isDeleted === undefined) {
-            query.isDeleted = { $ne: true };
-        }
 
         // 1. Handle Search (case-insensitive regex)
         if (search && searchFields.length > 0) {

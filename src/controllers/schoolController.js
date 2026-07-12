@@ -676,7 +676,6 @@ exports.getAttendance = catchAsync(async (req, res, next) => {
         startOfDay.setHours(0, 0, 0, 0);
         query.date = { $gte: startOfDay };
     }
-
     const studentIds = await StudentRepository.model.find({ schoolId }).distinct('_id');
     query.studentId = { $in: studentIds };
 

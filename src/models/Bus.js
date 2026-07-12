@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const softDeletePlugin = require('./plugins/softDeletePlugin');
 
 const BusSchema = new mongoose.Schema({
     busNumber: {
@@ -52,5 +53,7 @@ const BusSchema = new mongoose.Schema({
         default: null
     }
 });
+
+BusSchema.plugin(softDeletePlugin);
 
 module.exports = mongoose.model('Bus', BusSchema);

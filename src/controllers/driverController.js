@@ -99,7 +99,8 @@ exports.getDashboard = catchAsync(async (req, res, next) => {
             const StudentRepository = require('../repositories/StudentRepository');
             students = await StudentRepository.model.find({ 
                 assignedRoute: trip.routeId._id || trip.routeId,
-                assignedBus: trip.busId._id || trip.busId 
+                assignedBus: trip.busId._id || trip.busId,
+                isActive: true
             });
         }
     }
@@ -136,7 +137,7 @@ exports.getStudentsByRouteAndBus = catchAsync(async (req, res, next) => {
     const activeTripId = await redisClient.get(`driver:trip:${driverId}`);
 
     const [students, route, bus] = await Promise.all([
-        StudentRepository.model.find({ assignedRoute: routeId, assignedBus: busId }),
+        StudentRepository.model.find({ assignedRoute: routeId, assignedBus: busId, isActive: true }),
         RouteRepository.model.findById(routeId),
         BusRepository.model.findById(busId)
     ]);
@@ -330,7 +331,8 @@ exports.getAttendanceStatus = catchAsync(async (req, res, next) => {
 
     const students = await StudentRepository.model.find({ 
         assignedRoute: trip.routeId,
-        assignedBus: trip.busId 
+        assignedBus: trip.busId,
+        isActive: true
     }).lean();
 
     const attendances = await AttendanceRepository.model.find({ tripId: activeTripId }).lean();

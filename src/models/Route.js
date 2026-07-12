@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const softDeletePlugin = require('./plugins/softDeletePlugin');
 
 const RouteSchema = new mongoose.Schema({
     routeName: {
@@ -35,5 +36,7 @@ const RouteSchema = new mongoose.Schema({
         default: null
     }
 });
+
+RouteSchema.plugin(softDeletePlugin);
 
 module.exports = mongoose.model('Route', RouteSchema);
