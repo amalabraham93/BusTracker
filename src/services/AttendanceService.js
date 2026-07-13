@@ -31,12 +31,14 @@ class AttendanceService {
             if (status === 'Dropped') message = `Your student ${student.name} marked as dropped.`;
             if (status === 'Absent') message = `Your student ${student.name} marked as absent.`;
 
-            await NotificationService.sendPushNotification(
-                'parent',
-                student.parentPhone,
-                'Attendance Update',
-                message
-            );
+            if (student.parentId) {
+                await NotificationService.sendPushNotification(
+                    'parent',
+                    student.parentId.toString(),
+                    'Attendance Update',
+                    message
+                );
+            }
 
             try {
                 const { getIo } = require('../sockets/socketHandler');

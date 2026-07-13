@@ -24,6 +24,11 @@ class NotificationService {
             // Internal-only flag; don't ship it to the client payload.
             delete data.alertSound;
 
+            // Automatically attach parent_id to the data payload for the mobile app
+            if (role === 'parent') {
+                data.parent_id = userId;
+            }
+
             // Firebase strictly requires string values in data
             const stringifiedData = typeof data === 'object' ? JSON.parse(JSON.stringify(data)) : {};
             for (let key in stringifiedData) {

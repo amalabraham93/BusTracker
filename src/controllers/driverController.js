@@ -187,10 +187,14 @@ exports.sendAlertToParents = catchAsync(async (req, res, next) => {
 
     // 1.5 Emit Firebase Push Notification to all parents on this route
     const StudentRepository = require('../repositories/StudentRepository');
-    const students = await StudentRepository.model.find({ assignedRoute: trip.routeId, assignedBus: trip.busId, isActive: true });
-    const parentPhones = [...new Set(students.map(s => s.parentPhone))];
-    for (const phone of parentPhones) {
-        await NotificationService.sendPushNotification('parent', phone, alertData.type, alertData.message, { type: alertData.type });
+    const students = await StudentRepository.model.find({ 
+        assignedRoute: trip.routeId._id || trip.routeId, 
+        assignedBus: trip.busId._id || trip.busId, 
+        isActive: true 
+    });
+    const parentIds = [...new Set(students.filter(s => s.parentId).map(s => s.parentId.toString()))];
+    for (const pid of parentIds) {
+        await NotificationService.sendPushNotification('parent', pid, alertData.type, alertData.message, { type: alertData.type });
     }
 
     // 2. Log Action
@@ -251,11 +255,15 @@ exports.sendEmergencyAlert = catchAsync(async (req, res, next) => {
 
     // 1.6 Emit Firebase Push Notification to Parents on this Route
     const StudentRepository = require('../repositories/StudentRepository');
-    const students = await StudentRepository.model.find({ assignedRoute: trip.routeId, assignedBus: trip.busId, isActive: true });
-    const parentPhones = [...new Set(students.map(s => s.parentPhone))];
+    const students = await StudentRepository.model.find({ 
+        assignedRoute: trip.routeId._id || trip.routeId, 
+        assignedBus: trip.busId._id || trip.busId, 
+        isActive: true 
+    });
+    const parentIds = [...new Set(students.filter(s => s.parentId).map(s => s.parentId.toString()))];
     const parentMsg = "Alert - driver message and don't panic";
-    for (const phone of parentPhones) {
-        await NotificationService.sendPushNotification('parent', phone, 'Emergency Alert', parentMsg, { type: 'Emergency' });
+    for (const pid of parentIds) {
+        await NotificationService.sendPushNotification('parent', pid, 'Emergency Alert', parentMsg, { type: 'Emergency' });
     }
 
     // 2. Log Action

@@ -48,11 +48,11 @@ class TripService {
 
         // Fetch parents and send Push Notifications
         const students = await StudentRepository.model.find({ assignedRoute: trip.routeId, assignedBus: trip.busId, isActive: true });
-        const parentPhones = [...new Set(students.map(s => s.parentPhone))];
+        const parentIds = [...new Set(students.filter(s => s.parentId).map(s => s.parentId.toString()))];
         const title = 'Trip Started';
         const message = `The ${type.toLowerCase()} trip has started.`;
-        for (const phone of parentPhones) {
-            await NotificationService.sendPushNotification('parent', phone, title, message, { type });
+        for (const pid of parentIds) {
+            await NotificationService.sendPushNotification('parent', pid, title, message, { type });
         }
         
         return trip;
@@ -101,13 +101,13 @@ class TripService {
         if (trip.type === 'Pickup') {
             const AttendanceRepository = require('../repositories/AttendanceRepository');
             const boardedAttendances = await AttendanceRepository.model.find({ tripId: trip._id, status: 'Boarded' }).populate('studentId');
-            const parentPhones = [...new Set(boardedAttendances.map(a => a.studentId.parentPhone))];
+            const parentIds = [...new Set(boardedAttendances.filter(a => a.studentId && a.studentId.parentId).map(a => a.studentId.parentId.toString()))];
             
-            for (const phone of parentPhones) {
-                if (phone) {
+            for (const pid of parentIds) {
+                if (pid) {
                     await NotificationService.sendPushNotification(
                         'parent',
-                        phone,
+                        pid,
                         'Trip Ended',
                         'Your student reached school safely.',
                         { type: 'Pickup' }
@@ -157,13 +157,15 @@ class TripService {
             const key500m = `trip:${tripId}:student:${student._id}:notified:500m`;
             if (!await redisClient.get(key500m)) {
                 logger.info(`[Proximity Check] Triggering 500m alert for student ${student.name}`);
-                await NotificationService.sendPushNotification(
-                    'parent',
-                    student.parentPhone,
-                    'Bus Arriving Soon',
-                    `The bus is within 500m of your pickup location.`,
-                    { type: 'Proximity', alertSound: 'true' }
-                );
+                if (student.parentId) {
+                    await NotificationService.sendPushNotification(
+                        'parent',
+                        student.parentId.toString(),
+                        'Bus Arriving Soon',
+                        `The bus is within 500m of your pickup location.`,
+                        { type: 'Proximity', alertSound: 'true' }
+                    );
+                }
                 await redisClient.set(key500m, 'true', { EX: 43200 });
                 
                 // Mark 1km and 2km as notified as well to prevent double-firing
@@ -181,13 +183,15 @@ class TripService {
             const key1km = `trip:${tripId}:student:${student._id}:notified:1km`;
             if (!await redisClient.get(key1km)) {
                 logger.info(`[Proximity Check] Triggering 1km alert for student ${student.name}`);
-                await NotificationService.sendPushNotification(
-                    'parent',
-                    student.parentPhone,
-                    'Bus Getting Closer',
-                    `The bus is within 1km of your pickup location.`,
-                    { type: 'Proximity', alertSound: 'true' }
-                );
+                if (student.parentId) {
+                    await NotificationService.sendPushNotification(
+                        'parent',
+                        student.parentId.toString(),
+                        'Bus Getting Closer',
+                        `The bus is within 1km of your pickup location.`,
+                        { type: 'Proximity', alertSound: 'true' }
+                    );
+                }
                 await redisClient.set(key1km, 'true', { EX: 43200 });
                 
                 // Mark 2km as notified as well to prevent double-firing
@@ -203,13 +207,15 @@ class TripService {
             const key2km = `trip:${tripId}:student:${student._id}:notified:2km`;
             if (!await redisClient.get(key2km)) {
                 logger.info(`[Proximity Check] Triggering 2km alert for student ${student.name}`);
-                await NotificationService.sendPushNotification(
-                    'parent',
-                    student.parentPhone,
-                    'Bus Nearby',
-                    `The bus is within 2km of your pickup location.`,
-                    { type: 'Proximity', alertSound: 'true' }
-                );
+                if (student.parentId) {
+                    await NotificationService.sendPushNotification(
+                        'parent',
+                        student.parentId.toString(),
+                        'Bus Nearby',
+                        `The bus is within 2km of your pickup location.`,
+                        { type: 'Proximity', alertSound: 'true' }
+                    );
+                }
                 await redisClient.set(key2km, 'true', { EX: 43200 });
             }
         }
